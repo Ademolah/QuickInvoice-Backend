@@ -11,6 +11,12 @@ const userSchema = new mongoose.Schema({
   accountNumber: { type: String },
   accountName: { type: String }
 },
+plan: { type: String, enum: ["free", "pro"], default: "free" },
+  usage: {
+    invoicesThisMonth: { type: Number, default: 0 },
+    receiptsThisMonth: { type: Number, default: 0 },
+    lastReset: { type: Date, default: Date.now }
+  },
   createdAt: { type: Date, default: Date.now }
 });
 

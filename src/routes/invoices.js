@@ -3,6 +3,8 @@ const Invoice = require('../models/Invoice');
 const auth = require('../middleware/authMiddleware');
 const User =  require('../models/Users')
 const PDFDocument = require('pdfkit');
+const InvoiceLog = require('../models/InvoiceLog')
+const checkUsage = require('../middleware/checkUsage')
 
 const router = express.Router();
 
@@ -148,10 +150,6 @@ router.get('/:id/pdf', auth, async (req, res) => {
     doc.text(`Status: ${invoice.status}`);
 
     doc.moveDown();
-    // doc.fontSize(12).text('Account Details:', { underline: true });
-    // doc.text(`Bank: ${user.bankName || ''}`);
-    // doc.text(`Account Number: ${user.accountNumber || ''}`);
-    // doc.text(`Account Name: ${user.accountName || ''}`);
 
     doc.fontSize(14).text(`Bank: ${accountDetails.bankName || '-'}`);
     doc.text(`Account Number: ${accountDetails.accountNumber || '-'}`);
@@ -167,7 +165,90 @@ router.get('/:id/pdf', auth, async (req, res) => {
   }
 });
 
-module.exports = router;
+
+// Protected route to log invoice/receipt creation
+// router.post("/log", auth, checkUsage, async (req, res) => {
+//   const { type } = req.body; // "invoice" or "receipt"
+
+//   if (!["invoice", "receipt"].includes(type)) {
+//     return res.status(400).json({ message: "Invalid type" });
+//   }
+
+//   const log = new InvoiceLog({
+//     user: req.user.id,
+//     type,
+//   });
+
+//   await log.save();
+
+//   // Update usage counter
+//   const user = req.userDoc; // we can preload this in checkUsage for efficiency
+//   if (type === "invoice") {
+//     user.usage.invoicesThisMonth++;
+//   } else {
+//     user.usage.receiptsThisMonth++;
+//   }
+//   await user.save();
+
+//   res.json({ success: true, message: `${type} logged successfully` });
+// });
+
+// backend/routes/invoices.js (or wherever your log route is)
+router.post("/log", auth, checkUsage, async (req, res) => {
+  try {
+    const { type } = req.body;
+    const userId = req.user.id; // assuming auth middleware
+
+    const user = await User.findById(userId);
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+
+    const log = new InvoiceLog({
+          user: req.user.id,
+          type,
+        });
+
+    await log.save();
+
+
+      // const user = req.userDoc; // we can preload this in checkUsage for efficiency
+      // if (type === "invoice") {
+      //   user.usage.invoicesThisMonth++;
+      // } else {
+      //   user.usage.receiptsThisMonth++;
+      // }
+
+        
+
+    // reset usage if new month
+    const now = new Date();
+    if (new Date(user.usage.lastReset).getMonth() !== now.getMonth()) {
+      user.usage.invoicesThisMonth = 0;
+      user.usage.receiptsThisMonth = 0;
+      user.usage.lastReset = now;
+    }
+
+    if (type === "invoice") {
+      user.usage.invoicesThisMonth += 1;
+    } else if (type === "receipt") {
+      user.usage.receiptsThisMonth += 1;
+    }
+    console.log(user);
+
+    await user.save()
+    
+ 
+
+    // ✅ Always return JSON so frontend doesn’t choke
+    res.json({ success: true, usage: user.usage });
+  } catch (err) {
+    console.error("Error logging usage:", err);
+    res.status(500).json({ success: false, error: "Server error logging usage" });
+  }
+});
+
 
 
 module.exports = router;
