@@ -11,7 +11,8 @@ const router = express.Router();
 // Get current logged-in user info
 router.get('/me', auth, async (req, res) => {
   try {
-    const user = await User.findById(req.user.id).select('businessName email');
+    // const user = await User.findById(req.user.id).select('businessName email');
+    const user = await User.findById(req.user.id)
     if (!user) return res.status(404).json({ message: 'User not found' });
     res.json(user);
   } catch (err) {
