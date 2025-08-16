@@ -2,6 +2,7 @@ const express = require("express");
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 const User = require('../models/Users');
+const sendWelcomeEmail = require('../utils/sendWelcomeEmail')
 
 const router = express.Router();
 
@@ -43,6 +44,8 @@ router.post("/register", async (req, res) => {
       process.env.JWT_SECRET,
       { expiresIn: "7d" }
     );
+
+    await sendWelcomeEmail(name, email)
 
     res.status(201).json({
       message: "User registered successfully",

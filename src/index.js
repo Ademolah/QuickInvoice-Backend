@@ -5,6 +5,7 @@ const authRoutes = require('./routes/auths')
 const invoiceRoutes = require('./routes/invoices')
 const userRoutes = require('./routes/users');
 const clientRoutes = require('./routes/clientsRoute')
+const paymentRoute = require('./routes/payment')
 
 const cors = require('cors')
 
@@ -18,6 +19,10 @@ app.use(cors({
     origin: "http://localhost:3000",
     Credential: true
 }))
+
+
+
+app.use('/api/payments', paymentRoute)
 
 app.use(express.json())
 

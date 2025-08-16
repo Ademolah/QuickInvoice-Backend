@@ -17,7 +17,9 @@ plan: { type: String, enum: ["free", "pro"], default: "free" },
     receiptsThisMonth: { type: Number, default: 0 },
     lastReset: { type: Date, default: Date.now }
   },
-  createdAt: { type: Date, default: Date.now }
-});
+  plan: { type: String, enum: ['free','pro'], default: 'free' },
+  proExpires: { type: Date, default: null },
+  
+}, {timestamps: true});
 
 module.exports = mongoose.model('User', userSchema);
