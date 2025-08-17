@@ -4,6 +4,7 @@ const axios = require('axios');
 const protect = require('../middleware/authMiddleware'); // your protect
 const User = require('../models/Users');
 const crypto = require('crypto')
+const sendSubscriptionEmail = require('../utils/sendSubscriptionEmail')
 
 const router = express.Router();
 
@@ -117,18 +118,38 @@ router.post(
         if (userId) {
           const user = await User.findById(userId);
           if (user) {
+
+
+            // const now = new Date();
+            // const currentExpiry =
+            //   user.proExpires && user.proExpires > now
+            //     ? new Date(user.proExpires)
+            //     : now;
+
+            // user.plan = 'pro';
+
+            
+            // user.proExpires = new Date(
+            //   currentExpiry.getTime() + 30 * 24 * 60 * 60 * 1000
+            // ); // +30 days
             const now = new Date();
+
             const currentExpiry =
-              user.proExpires && user.proExpires > now
+            user.proExpires && new Date(user.proExpires) > now
                 ? new Date(user.proExpires)
                 : now;
 
             user.plan = 'pro';
+
             user.proExpires = new Date(
-              currentExpiry.getTime() + 30 * 24 * 60 * 60 * 1000
+            currentExpiry.getTime() + 30 * 24 * 60 * 60 * 1000
             ); // +30 days
+
+
+
             await user.save();
 
+            await sendSubscriptionEmail(user.name, user.email)
             console.log(`✅ User ${user.email} upgraded to Pro until ${user.proExpires}`);
           } else {
             console.warn(`⚠️ User not found for userId: ${userId}`);

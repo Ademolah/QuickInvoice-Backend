@@ -45,7 +45,7 @@ router.post("/register", async (req, res) => {
       { expiresIn: "7d" }
     );
 
-    await sendWelcomeEmail(name, email)
+    await sendWelcomeEmail(name, email, businessName)
 
     res.status(201).json({
       message: "User registered successfully",

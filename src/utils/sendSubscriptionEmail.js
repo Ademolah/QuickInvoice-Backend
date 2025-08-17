@@ -1,14 +1,7 @@
-
-
-
-
-
-
-
 const nodemailer = require("nodemailer");
 
 
-const sendWelcomeEmail = async(name, email, businessName)=>{
+const sendWelcomeEmail = async(name, email)=>{
     // const owner = await User.findById(slot.userId)
         
     // console.log(owner.email);
@@ -39,7 +32,7 @@ const sendWelcomeEmail = async(name, email, businessName)=>{
 <html>
 <head>
   <meta charset="UTF-8" />
-  <title>Welcome to QuickInvoice NG</title>
+  <title>Subscription Successful</title>
 </head>
 <body style="margin:0; padding:0; background-color:#F9FAFB; font-family:Inter, Arial, sans-serif; color:#4B5563;">
   <table align="center" width="100%" cellpadding="0" cellspacing="0" style="max-width:600px; background:#FFFFFF; border-radius:12px; box-shadow:0 4px 12px rgba(0,0,0,0.05); overflow:hidden;">
@@ -55,7 +48,7 @@ const sendWelcomeEmail = async(name, email, businessName)=>{
       <td style="padding:30px;">
         <h2 style="font-family:Poppins, Arial, sans-serif; font-size:22px; margin:0; color:#0046A5;">Welcome, ${name}!</h2>
         <p style="margin:16px 0; font-size:16px; line-height:1.6;">
-          We’re excited to have you onboard. Your account <strong>${businessName}</strong> has been successfully created.  
+          We’re excited to have you onboard. Your account <strong>${name}</strong> has been successfully created.  
           With QuickInvoice NG, you can now create, send, and track invoices effortlessly.
         </p>
 
@@ -83,7 +76,7 @@ const sendWelcomeEmail = async(name, email, businessName)=>{
        `,
     });
 
-    console.log("✅ Welcome email sent via Resend", info.messageId );
+    console.log("✅ Subscription email sent via Resend", info.messageId );
     // console.log("Message sent:", info.messageId);
     })();
     } catch (error) {
