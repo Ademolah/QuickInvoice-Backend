@@ -14,11 +14,20 @@ router.post('/', auth, async (req, res) => {
     const { clientName, clientEmail, clientPhone, items = [], tax = 0, discount = 0, dueDate, notes } = req.body;
     if (!clientName || !items.length) return res.status(400).json({ message: 'Client and items required' });
     const subtotal = items.reduce((s, it) => s + (it.quantity * it.unitPrice), 0);
-    const total = Math.max(0, subtotal + tax - discount)/10;
+    const total = Math.max(0, subtotal + tax - discount);
+    
+   
+
     const computedItems = items.map(it => ({ ...it, total: it.quantity * it.unitPrice }));
     const inv = await Invoice.create({
       userId: req.userId, clientName, clientEmail, clientPhone, items: computedItems, subtotal, tax, discount, total, status: 'sent', dueDate, notes
     });
+
+    console.log(subtotal)
+    console.log(total);
+    console.log(tax)
+    console.log(typeof(total))
+    
     res.json(inv);
   } catch (e) {
     console.error(e);
