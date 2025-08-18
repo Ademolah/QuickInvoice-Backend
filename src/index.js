@@ -16,10 +16,28 @@ const app = express()
 
 connectDb()
 
+// app.use(cors({
+//     origin: ["http://localhost:3000", "https://quick-invoice-frontend-two.vercel.app/"],
+//     Credential: true
+// }))
+const allowedOrigins = [
+  "https://bookly-frontend-fawn.vercel.app",
+  "https://www.booklyio.com",
+  "https://booklyio.com", // ✅ no www version too
+  "http://localhost:3000",
+  "https://quick-invoice-frontend-two.vercel.app"
+];
+
 app.use(cors({
-    origin: "http://localhost:3000",
-    Credential: true
-}))
+  origin: function (origin, callback) {
+    if (!origin || allowedOrigins.includes(origin)) {
+      callback(null, true);
+    } else {
+      callback(new Error("CORS not allowed for this origin"));
+    }
+  },
+  credentials: true
+}));
 
 
 
