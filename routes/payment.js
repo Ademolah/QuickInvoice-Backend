@@ -11,7 +11,7 @@ const router = express.Router();
 const PAYSTACK_SECRET = process.env.PAYSTACK_SECRET_KEY;
 const BASE_URL = process.env.BASE_URL || 'http://localhost:4000';
 const FRONTEND_URL = process.env.FRONTEND_URL || 'http://localhost:3000';
-const PLAN_PRICE = Number(process.env.PLAN_PRICE_KOBO || 450000); // in kobo
+const PLAN_PRICE = Number(process.env.PLAN_PRICE_KOBO || 300000); // in kobo
 // const PLAN_PRICE = Number(process.env.PLAN_PRICE_KOBO || 50000); // in kobo
 
 // initialize transaction
