@@ -22,9 +22,8 @@ connectDb()
 //     Credential: true
 // }))
 const allowedOrigins = [
-  "https://bookly-frontend-fawn.vercel.app",
-  "https://www.booklyio.com",
-  "https://booklyio.com", // ✅ no www version too
+  "https://www.quickinvoiceng.com",
+  "https://quickinvoiceng.com", // ✅ no www version too
   "http://localhost:3000",
   "https://quick-invoice-frontend-two.vercel.app"
 ];

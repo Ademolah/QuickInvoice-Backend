@@ -10,7 +10,7 @@ const router = express.Router();
  */
 router.post('/', auth, async (req, res) => {
   try {
-    const { name, price, stock, sku, description, active } = req.body;
+    const { name, price, stock, sku, category, description, active } = req.body;
 
     if (!name || price == null || stock == null) {
       return res.status(400).json({ message: 'Name, price and stock are required' });
@@ -20,6 +20,7 @@ router.post('/', auth, async (req, res) => {
       userId: req.userId,
       name: String(name).trim(),
       price: Number(price),
+      category: String(category).trim() ,
       stock: Math.max(0, parseInt(stock, 10)),
       sku: sku ? String(sku).trim() : undefined,
       description,
