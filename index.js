@@ -7,6 +7,7 @@ const userRoutes = require('./routes/users');
 const clientRoutes = require('./routes/clientsRoute')
 const paymentRoute = require('./routes/payment')
 const reportsRoute = require('./routes/reports')
+const inventoryRoutes = require('./routes/inventoryRoutes')
 
 const cors = require('cors')
 
@@ -51,6 +52,7 @@ app.use(express.json())
 
 
 
+app.use('/api/inventory', inventoryRoutes);
 app.use('/api/users', userRoutes);
 app.use('/api/auth', authRoutes);
 app.use('/api/invoices', invoiceRoutes);
