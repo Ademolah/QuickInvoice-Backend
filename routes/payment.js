@@ -11,7 +11,7 @@ const router = express.Router();
 const PAYSTACK_SECRET = process.env.PAYSTACK_SECRET_KEY;
 const BASE_URL = process.env.BASE_URL || 'http://localhost:4000';
 const FRONTEND_URL = process.env.FRONTEND_URL || 'http://localhost:3000';
-const PLAN_PRICE = Number(process.env.PLAN_PRICE_KOBO || 300000); // in kobo
+const PLAN_PRICE = Number(process.env.PLAN_PRICE_KOBO); // in kobo
 // const PLAN_PRICE = Number(process.env.PLAN_PRICE_KOBO || 50000); // in kobo
 
 // initialize transaction
@@ -24,7 +24,7 @@ router.post('/initialize', protect, async (req, res) => {
     const response = await axios.post('https://api.paystack.co/transaction/initialize', {
       email: user.email,
       amount: PLAN_PRICE, // in kobo
-      callback_url: `http://localhost:3000/billing`, // customer returns here
+      callback_url: `https://www.quickinvoiceng.com/billing`, // customer returns here
       metadata: { userId } // save user id to metadata for verify
     }, {
       headers: { Authorization: `Bearer ${PAYSTACK_SECRET}` }
