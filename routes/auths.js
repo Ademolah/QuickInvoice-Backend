@@ -105,7 +105,7 @@ router.post("/login", async (req, res) => {
         businessName: user.businessName
       }
     }); 
-    return
+    // return
   } catch (error) {
     console.error("Login error:", error);
     res.status(500).json({ message: "Server error" });
