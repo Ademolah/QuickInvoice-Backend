@@ -104,7 +104,8 @@ router.post("/login", async (req, res) => {
         phone: user.phone,
         businessName: user.businessName
       }
-    });
+    }); 
+    return
   } catch (error) {
     console.error("Login error:", error);
     res.status(500).json({ message: "Server error" });
