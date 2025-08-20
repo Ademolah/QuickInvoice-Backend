@@ -56,7 +56,7 @@ const sendWelcomeEmail = async(name, email, businessName)=>{
         <h2 style="font-family:Poppins, Arial, sans-serif; font-size:22px; margin:0; color:#0046A5;">Welcome, ${name}!</h2>
         <p style="margin:16px 0; font-size:16px; line-height:1.6;">
           We’re excited to have you onboard. Your account <strong>${businessName}</strong> has been successfully created.  
-          With QuickInvoice NG, you can now create, send, and track invoices effortlessly.
+          With QuickInvoice NG, you can now manage your Business like a pro seamlessly from anywhere !.
         </p>
 
         <p style="margin:20px 0; font-size:16px;">
