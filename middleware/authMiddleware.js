@@ -13,7 +13,8 @@ const protect = (req, res, next) => {
 
   try {
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
-    req.user = decoded; // { id, email }
+    // req.user = decoded; // { id, email }
+    req.user = { _id: decoded.id, email: decoded.email };
     req.userId = decoded.id; // <-- add this line
     next();
   } catch (err) {
