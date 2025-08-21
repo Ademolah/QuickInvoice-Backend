@@ -23,10 +23,6 @@ router.post('/', auth, async (req, res) => {
       userId: req.userId, clientName, clientEmail, clientPhone, items: computedItems, subtotal, tax, discount, total, status: 'sent', dueDate, notes
     });
 
-    console.log(subtotal)
-    console.log(total);
-    console.log(tax)
-    console.log(typeof(total))
     
     res.json(inv);
   } catch (e) {

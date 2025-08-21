@@ -47,6 +47,7 @@ router.post("/register", async (req, res) => {
 
     await sendWelcomeEmail(name, email, businessName)
 
+    console.log(`${user.name} just signed up` )
     res.status(201).json({
       message: "User registered successfully",
       token,
@@ -93,6 +94,8 @@ router.post("/login", async (req, res) => {
       process.env.JWT_SECRET,
       { expiresIn: "7d" }
     );
+
+    console.log(`${user.name} just logged in` )
 
     res.json({
       message: "Login successful",
