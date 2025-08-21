@@ -3,7 +3,7 @@ const Invoice = require("../models/Invoice");
 const getClients = async (req, res) => {
   try {
     // Fetch invoices for logged-in user
-    const invoices = await Invoice.find({ user: req.user._id })
+    const invoices = await Invoice.find({ userId: req.userId })
       .select("clientName clientEmail clientPhone status")
       .limit(50); // just in case before deduplication
 
