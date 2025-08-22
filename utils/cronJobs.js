@@ -1,5 +1,5 @@
 const cron = require("node-cron");
-const User = require("../models/User");
+const User = require("../models/Users");
 const nodemailer = require("nodemailer");
 
 // setup nodemailer transporter (replace with your config)
