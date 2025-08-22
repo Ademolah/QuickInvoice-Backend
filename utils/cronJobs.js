@@ -15,7 +15,7 @@ const transporter = nodemailer.createTransport({
 
 function sendReminderEmail(user) {
   const mailOptions = {
-    from: '"QuickIncoice NG" <hi@quickinvoiceng.com>',
+    from: '"QuickInvoice NG" <hi@quickinvoiceng.com>',
     to: user.email,
     subject: "⏰ Your Pro plan expires soon",
     html: `
