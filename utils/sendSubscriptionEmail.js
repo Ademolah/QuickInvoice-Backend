@@ -56,7 +56,7 @@ const sendWelcomeEmail = async(name, email)=>{
           You now have full access to all premium features of QuickInvoice NG. Start creating unlimited invoices today!
         </p>
 
-        <a href="https://quickinvoice.ng/dashboard" 
+        <a href="https://quickinvoiceng.com/billing" 
            style="display:inline-block; padding:12px 24px; background:#00B86B; color:#FFFFFF; text-decoration:none; border-radius:8px; font-size:16px; font-weight:600;">
            Go to Dashboard
         </a>
