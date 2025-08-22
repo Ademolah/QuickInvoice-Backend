@@ -47,7 +47,7 @@ router.post("/register", async (req, res) => {
 
     await sendWelcomeEmail(name, email, businessName)
 
-    console.log(`${user.name} just signed up` )
+    console.log(`${newUser.name} just signed up` )
     res.status(201).json({
       message: "User registered successfully",
       token,
