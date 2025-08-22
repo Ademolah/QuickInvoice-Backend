@@ -58,7 +58,7 @@ const sendWelcomeEmail = async(name, email, businessName)=>{
           Get started today and simplify your billing process.
         </p>
 
-        <a href="https://quickinvoice.ng/dashboard" 
+        <a href="https://quickinvoiceng.com/dashboard" 
            style="display:inline-block; padding:12px 24px; background:#0046A5; color:#FFFFFF; text-decoration:none; border-radius:8px; font-size:16px; font-weight:600;">
            Go to Dashboard
         </a>
