@@ -1,4 +1,5 @@
 require('dotenv').config()
+require('./utils/cronJobs')
 const express = require('express')
 const connectDb = require('./db/db')
 const authRoutes = require('./routes/auths')

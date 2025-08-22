@@ -1,10 +1,5 @@
 
 
-
-
-
-
-
 const nodemailer = require("nodemailer");
 
 
