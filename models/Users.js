@@ -11,7 +11,7 @@ const userSchema = new mongoose.Schema({
   accountNumber: { type: String },
   accountName: { type: String }
 },
-subaccountCode: { type: String }, // from Paystack
+subaccount: { type: String }, // from Paystack
 plan: { type: String, enum: ["free", "pro"], default: "free" },
 usage: {
     invoicesThisMonth: { type: Number, default: 0 },
