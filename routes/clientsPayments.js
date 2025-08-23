@@ -45,8 +45,8 @@ router.post('/subaccount', auth, async (req, res) => {
     }
 
     // If subaccount exists, update it; else create new
-    if (user.subaccountCode) {
-      const update = await paystack.put(`/subaccount/${user.subaccountCode}`, {
+    if (user.subaccount) {
+      const update = await paystack.put(`/subaccount/${user.subaccount}`, {
         business_name: businessName || accountDetails.accountName,
         settlement_bank: bank_code,
         account_number: String(accountDetails.accountNumber),
@@ -56,7 +56,8 @@ router.post('/subaccount', auth, async (req, res) => {
     }
 
     const create = await paystack.post('/subaccount', {
-      business_name: businessName || accountDetails.accountName,
+    //   business_name: businessName || accountDetails.accountName,
+      business_name: accountDetails.accountName,
       settlement_bank: bank_code,
       account_number: String(accountDetails.accountNumber),
       percentage_charge: 0, // platform fee can be configured later
@@ -64,7 +65,7 @@ router.post('/subaccount', auth, async (req, res) => {
       metadata: { quickinvoice_user: user._id.toString() }
     });
 
-    user.subaccountCode = create.data.data.subaccount_code;
+    user.subaccount = create.data.data.subaccount_code;
     await user.save();
 
     res.json({ subaccount: create.data.data });
@@ -86,7 +87,7 @@ router.post('/initiate', auth, async (req, res) => {
 
     const user = await User.findById(req.userId);
     if (!user) return res.status(404).json({ message: 'User not found' });
-    if (!user.subaccountCode) return res.status(400).json({ message: 'No subaccount yet. Create one first.' });
+    if (!user.subaccount) return res.status(400).json({ message: 'No subaccount yet. Create one first.' });
 
     const amountInKobo = Math.round(Number(amount) * 100);
 
@@ -94,7 +95,7 @@ router.post('/initiate', auth, async (req, res) => {
       email: user.email,
       amount: amountInKobo,
       currency: 'NGN',
-      subaccount: user.subaccountCode,
+      subaccount: user.subaccount,
       bearer: 'subaccount', // subaccount bears Paystack fees; adjust to 'account' if platform bears fees
       metadata: {
         quickinvoice_user: user._id.toString(),
