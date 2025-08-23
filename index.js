@@ -43,7 +43,7 @@ app.use(cors({
   credentials: true
 }));
 
-
+app.use('/api/payments/nfcWebhook', express.raw({ type: 'application/json' }));
 
 app.use('/api/payments', paymentRoute)
 

@@ -1,216 +1,169 @@
-// const express = require("express");
-// const router = express.Router();
-// const auth = require("../middleware/authMiddleware");
-// const Transaction = require("../models/Transaction");
-// const crypto = require("crypto");
-// const provider = require("../services/paymentProvider"); // adapter
-
-// // POST /api/payments/initiate
-// router.post("/initiate", auth, async (req, res) => {
-//   try {
-//     const { amount, method, note } = req.body;
-//     if (!amount || amount <= 0) return res.status(400).json({ message: "Invalid amount." });
-//     if (!["NFC", "QR", "LINK"].includes(method)) return res.status(400).json({ message: "Invalid method." });
-
-//     const reference = `QNG_${Date.now()}_${crypto.randomBytes(3).toString("hex").toUpperCase()}`;
-//     const tx = await Transaction.create({
-//       userId: req.userId,
-//       amount,
-//       method,
-//       status: "pending",
-//       reference,
-//       note,
-//     });
-
-//     res.json({ reference: tx.reference, amount: tx.amount, status: tx.status });
-//   } catch (e) {
-//     console.error(e);
-//     res.status(500).json({ message: "Server error initiating payment" });
-//   }
-// });
-
-// // POST /api/payments/confirm
-// router.post("/confirm", auth, async (req, res) => {
-//   try {
-//     const { reference, cardToken } = req.body;
-//     const tx = await Transaction.findOne({ reference, userId: req.userId });
-//     if (!tx) return res.status(404).json({ message: "Transaction not found" });
-//     if (tx.status !== "pending") return res.status(400).json({ message: "Transaction already processed" });
-
-//     // Charge with provider (mock now; real later)
-//     const chargeResult = await provider.chargeCardPresent({
-//       amount: tx.amount,
-//       reference: tx.reference,
-//       userId: req.userId,
-//       cardToken, // from NFC read / provider SDK
-//     });
-
-//     tx.status = chargeResult.success ? "success" : "failed";
-//     tx.settledTo = chargeResult.settledTo || null;
-//     await tx.save();
-
-//     res.json({ reference: tx.reference, amount: tx.amount, status: tx.status });
-//   } catch (e) {
-//     console.error(e);
-//     res.status(500).json({ message: "Server error confirming payment" });
-//   }
-// });
-
-// // (Optional) Webhook endpoint for provider to confirm async events
-// router.post("/webhook", express.json({ type: "*/*" }), async (req, res) => {
-//   try {
-//     // verify signature if provider supports
-//     const evt = req.body;
-//     // match by reference, update tx.status accordingly
-//     // await Transaction.findOneAndUpdate({ reference: evt.reference }, { status: evt.status });
-//     res.sendStatus(200);
-//   } catch (e) {
-//     console.error(e);
-//     res.sendStatus(500);
-//   }
-// });
-
-// module.exports = router;
-
-
-// routes/paymentRoutes.js
-
-const express = require('express')
-const axios = require('axios')
-const Payment = require("../models/Payments.js");
-const ActivityLog = require("../models/Activity.js");
+const express = require('express');
+const crypto = require('crypto');
+const paystack = require('../utils/paystack');
+const Payment = require('../models/Payments');
+const User = require('../models/Users');
+const auth = require('../middleware/authMiddleware');
 
 const router = express.Router();
 
-// Initialize Payment
-router.post("/initiate", async (req, res) => {
-//   try {
-//     const { amount, email, userId } = req.body;
+/**
+ * Create or refresh subaccount for the current user from stored accountDetails.
+ * Expects user.accountDetails to contain bankName, accountNumber, accountName.
+ * For live integration, pass bank_code; or use a map for popular banks below.
+ */
+const BANK_CODE_MAP = {
+  'Access Bank': '044',
+  'GTBank': '058',
+  'First Bank': '011',
+  'Zenith Bank': '057',
+  'United Bank for Africa': '033',
+  'Union Bank': '032',
+  'FCMB': '214',
+  'Fidelity Bank': '070',
+  'Sterling Bank': '232',
+  'Keystone Bank': '082',
+  'Polaris Bank': '076',
+  'Wema Bank': '035',
+  'Kuda': '50211',
+  'Opay': '999992', // update with valid code if needed
+};
 
-//     // Initialize transaction with Paystack
-//     const response = await axios.post(
-//       "https://api.paystack.co/transaction/initialize",
-//       {
-//         email,
-//         amount: amount * 100, // Paystack works in kobo
-//       },
-//       {
-//         headers: {
-//           Authorization: `Bearer ${process.env.PAYSTACK_SECRET_KEY}`,
-//         },
-//       }
-//     );
+router.post('/subaccount', auth, async (req, res) => {
+  try {
+    const user = await User.findById(req.userId);
+    if (!user) return res.status(404).json({ message: 'User not found' });
 
-//     const { reference, authorization_url } = response.data.data;
-
-//     // Save Payment in DB
-//     const payment = await Payment.create({
-//       user: userId,
-//       amount,
-//       reference,
-//       status: "pending",
-//     });
-
-//     // Log Activity
-//     await ActivityLog.create({
-//       user: userId,
-//       action: `Payment of ₦${amount} initialized`,
-//       type: "payment",
-//     });
-
-//     await payment.save()
-
-//     res.json({ authorization_url, reference });
-//   } catch (err) {
-//     console.error(err.response?.data || err.message);
-//     res.status(500).json({ error: "Payment initiation failed" });
-//   }
-
-try {
-    const { amount, email } = req.body;
-
-    if (!email || !amount) {
-      return res.status(400).json({
-        status: false,
-        message: "Email and Amount are required",
-      });
+    const { accountDetails, businessName, email } = user;
+    if (!accountDetails?.bankName || !accountDetails?.accountNumber || !accountDetails?.accountName) {
+      return res.status(400).json({ message: 'Missing bank account details on user profile' });
     }
 
-    // Paystack wants amount in kobo
-    const paystackAmount = amount * 100;
+    const bank_code = BANK_CODE_MAP[accountDetails.bankName] || req.body.bank_code;
+    if (!bank_code) {
+      return res.status(400).json({ message: 'Unknown bank. Provide bank_code in body.' });
+    }
 
-    const response = await axios.post(
-      "https://api.paystack.co/transaction/initialize",
-      {
-        email,
-        amount: paystackAmount,
-        reference: uuidv4(),
-      },
-      {
-        headers: {
-          Authorization: `Bearer ${process.env.PAYSTACK_SECRET_KEY}`,
-          "Content-Type": "application/json",
-        },
-      }
-    );
+    // If subaccount exists, update it; else create new
+    if (user.subaccountCode) {
+      const update = await paystack.put(`/subaccount/${user.subaccountCode}`, {
+        business_name: businessName || accountDetails.accountName,
+        settlement_bank: bank_code,
+        account_number: String(accountDetails.accountNumber),
+        percentage_charge: 0, // QuickInvoice takes fee as platform if needed; adjust if using split fees
+      });
+      return res.json({ subaccount: update.data.data });
+    }
 
-    // Log activity
-    await ActivityLog.create({
-      action: "Payment Initiated",
-      details: `₦${amount} charged to ${email}`,
+    const create = await paystack.post('/subaccount', {
+      business_name: businessName || accountDetails.accountName,
+      settlement_bank: bank_code,
+      account_number: String(accountDetails.accountNumber),
+      percentage_charge: 0, // platform fee can be configured later
+      primary_contact_email: email,
+      metadata: { quickinvoice_user: user._id.toString() }
     });
 
-    res.status(200).json(response.data);
-  } catch (error) {
-    console.error("Payment error:", error.response?.data || error.message);
-    res.status(500).json({
-      status: false,
-      message: error.response?.data?.message || "Payment failed",
-    });
+    user.subaccountCode = create.data.data.subaccount_code;
+    await user.save();
+
+    res.json({ subaccount: create.data.data });
+  } catch (err) {
+    console.error(err?.response?.data || err);
+    res.status(500).json({ message: 'Failed to create/update subaccount' });
   }
 });
 
-// Webhook (Paystack → our server)
-router.post("/webhook", async (req, res) => {
+/**
+ * Initialize a payment.
+ * Body: { amount, description }
+ * Uses user.subaccountCode for split settlement and user.email for customer email.
+ */
+router.post('/initiate', auth, async (req, res) => {
   try {
-    const event = req.body;
+    const { amount, description } = req.body;
+    if (!amount || Number(amount) <= 0) return res.status(400).json({ message: 'Amount required' });
 
-    if (event.event === "charge.success") {
-      const { reference, amount, customer } = event.data;
+    const user = await User.findById(req.userId);
+    if (!user) return res.status(404).json({ message: 'User not found' });
+    if (!user.subaccountCode) return res.status(400).json({ message: 'No subaccount yet. Create one first.' });
 
-      const payment = await Payment.findOneAndUpdate(
-        { reference },
-        { status: "success" },
-        { new: true }
-      );
+    const amountInKobo = Math.round(Number(amount) * 100);
 
-      if (payment) {
-        await ActivityLog.create({
-          user: payment.user,
-          action: `Received ₦${amount / 100} from ${customer.email}`,
-          type: "payment",
-        });
+    const init = await paystack.post('/transaction/initialize', {
+      email: user.email,
+      amount: amountInKobo,
+      currency: 'NGN',
+      subaccount: user.subaccountCode,
+      bearer: 'subaccount', // subaccount bears Paystack fees; adjust to 'account' if platform bears fees
+      metadata: {
+        quickinvoice_user: user._id.toString(),
+        description: description || 'NFC Payment'
       }
-    }
+    });
 
-    res.sendStatus(200); // Acknowledge webhook
+    const { authorization_url, reference } = init.data.data;
+
+    await Payment.create({
+      userId: user._id,
+      amount: amountInKobo,
+      reference,
+      description: description || 'NFC Payment',
+      status: 'pending',
+      authUrl: authorization_url
+    });
+
+    res.json({ authorization_url, reference });
   } catch (err) {
-    console.error(err.message);
+    console.error(err?.response?.data || err);
+    res.status(500).json({ message: 'Payment initialization failed' });
+  }
+});
+
+/**
+ * Verify a payment by reference
+ */
+router.get('/verify/:reference', auth, async (req, res) => {
+  try {
+    const { reference } = req.params;
+    const verify = await paystack.get(`/transaction/verify/${reference}`);
+    const data = verify.data.data;
+
+    const status = data.status === 'success' ? 'success' : (data.status === 'failed' ? 'failed' : 'pending');
+
+    const payment = await Payment.findOneAndUpdate(
+      { reference },
+      { status, metadata: data },
+      { new: true }
+    );
+
+    if (!payment) return res.status(404).json({ message: 'Payment not found' });
+    res.json(payment);
+  } catch (err) {
+    console.error(err?.response?.data || err);
+    res.status(500).json({ message: 'Verification failed' });
+  }
+});
+
+/**
+ * Webhook (remember to set raw body for this route in server.js)
+ */
+router.post('/nfcWebhook', express.raw({ type: 'application/json' }), async (req, res) => {
+  try {
+    const signature = req.headers['x-paystack-signature'];
+    const hash = crypto.createHmac('sha512', process.env.PAYSTACK_SECRET_KEY).update(req.body).digest('hex');
+    if (signature !== hash) return res.status(401).send('Invalid signature');
+
+    const event = JSON.parse(req.body.toString());
+    if (event?.event === 'charge.success') {
+      const ref = event.data.reference;
+      await Payment.findOneAndUpdate({ reference: ref }, { status: 'success', metadata: event.data });
+    }
+    res.sendStatus(200);
+  } catch (err) {
+    console.error(err);
     res.sendStatus(500);
   }
 });
 
-// Fetch Payment History
-router.get("/history/:userId", async (req, res) => {
-  try {
-    const payments = await Payment.find({ user: req.params.userId }).sort({
-      createdAt: -1,
-    });
-    res.json(payments);
-  } catch (err) {
-    res.status(500).json({ error: "Failed to fetch history" });
-  }
-});
-
-module.exports = router
-
+module.exports = router;
