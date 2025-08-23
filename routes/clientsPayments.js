@@ -29,12 +29,60 @@ const BANK_CODE_MAP = {
   'Opay': '999992', // update with valid code if needed
 };
 
+// router.post('/subaccount', auth, async (req, res) => {
+//   try {
+//     const user = await User.findById(req.userId);
+//     if (!user) return res.status(404).json({ message: 'User not found' });
+
+//     const { accountDetails, businessName, email } = user;
+//     if (!accountDetails?.bankName || !accountDetails?.accountNumber || !accountDetails?.accountName) {
+//       return res.status(400).json({ message: 'Missing bank account details on user profile' });
+//     }
+
+//     const bank_code = BANK_CODE_MAP[accountDetails.bankName] || req.body.bank_code;
+//     if (!bank_code) {
+//       return res.status(400).json({ message: 'Unknown bank. Provide bank_code in body.' });
+//     }
+
+//     // If subaccount exists, update it; else create new
+//     if (user.subaccount) {
+//       const update = await paystack.put(`/subaccount/${user.subaccount}`, {
+//         // business_name: businessName || accountDetails.accountName,
+//         business_name: accountDetails.accountName,
+//         settlement_bank: bank_code,
+//         account_number: String(accountDetails.accountNumber),
+//         percentage_charge: 0, // QuickInvoice takes fee as platform if needed; adjust if using split fees
+//       });
+//       return res.json({ subaccount: update.data.data });
+//     }
+
+//     const create = await paystack.post('/subaccount', {
+//     //   business_name: businessName || accountDetails.accountName,
+//       business_name: accountDetails.accountName,
+//       settlement_bank: bank_code,
+//       account_number: String(accountDetails.accountNumber),
+//       percentage_charge: 0, // platform fee can be configured later
+//       primary_contact_email: email,
+//       metadata: { quickinvoice_user: user._id.toString() }
+//     });
+
+//     user.subaccount = create.data.data.subaccount_code;
+//     await user.save();
+
+//     res.json({ subaccount: create.data.data });
+//   } catch (err) {
+//     console.error(err?.response?.data || err);
+//     res.status(500).json({ message: 'Failed to create/update subaccount' });
+//   }
+// });
+
+
 router.post('/subaccount', auth, async (req, res) => {
   try {
     const user = await User.findById(req.userId);
     if (!user) return res.status(404).json({ message: 'User not found' });
 
-    const { accountDetails, businessName, email } = user;
+    const { accountDetails, businessName, email, subaccount } = user;
     if (!accountDetails?.bankName || !accountDetails?.accountNumber || !accountDetails?.accountName) {
       return res.status(400).json({ message: 'Missing bank account details on user profile' });
     }
@@ -44,24 +92,38 @@ router.post('/subaccount', auth, async (req, res) => {
       return res.status(400).json({ message: 'Unknown bank. Provide bank_code in body.' });
     }
 
-    // If subaccount exists, update it; else create new
-    if (user.subaccount) {
-      const update = await paystack.put(`/subaccount/${user.subaccount}`, {
-        // business_name: businessName || accountDetails.accountName,
-        business_name: accountDetails.accountName,
-        settlement_bank: bank_code,
-        account_number: String(accountDetails.accountNumber),
-        percentage_charge: 0, // QuickInvoice takes fee as platform if needed; adjust if using split fees
-      });
-      return res.json({ subaccount: update.data.data });
+    // If subaccount already exists
+    if (subaccount) {
+      // Fetch current subaccount from Paystack
+      const existing = await paystack.get(`/subaccount/${subaccount}`);
+      const data = existing.data.data;
+
+      // Check if anything has changed
+      const needsUpdate =
+        data.settlement_bank !== bank_code ||
+        data.account_number !== String(accountDetails.accountNumber) ||
+        data.business_name !== accountDetails.accountName;
+
+      if (needsUpdate) {
+        const update = await paystack.put(`/subaccount/${subaccount}`, {
+          business_name: accountDetails.accountName,
+          settlement_bank: bank_code,
+          account_number: String(accountDetails.accountNumber),
+          percentage_charge: 0,
+        });
+        return res.json({ subaccount: update.data.data, updated: true });
+      }
+
+      // No update needed
+      return res.json({ subaccount: data, updated: false });
     }
 
+    // Otherwise create new subaccount
     const create = await paystack.post('/subaccount', {
-    //   business_name: businessName || accountDetails.accountName,
       business_name: accountDetails.accountName,
       settlement_bank: bank_code,
       account_number: String(accountDetails.accountNumber),
-      percentage_charge: 0, // platform fee can be configured later
+      percentage_charge: 0,
       primary_contact_email: email,
       metadata: { quickinvoice_user: user._id.toString() }
     });
@@ -69,7 +131,8 @@ router.post('/subaccount', auth, async (req, res) => {
     user.subaccount = create.data.data.subaccount_code;
     await user.save();
 
-    res.json({ subaccount: create.data.data });
+    res.json({ subaccount: create.data.data, created: true });
+
   } catch (err) {
     console.error(err?.response?.data || err);
     res.status(500).json({ message: 'Failed to create/update subaccount' });
