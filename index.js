@@ -9,6 +9,7 @@ const clientRoutes = require('./routes/clientsRoute')
 const paymentRoute = require('./routes/payment')
 const reportsRoute = require('./routes/reports')
 const inventoryRoutes = require('./routes/inventoryRoutes')
+const clientPaymentsRoutes = require('./routes/clientsPayments')
 
 const cors = require('cors')
 
@@ -26,7 +27,9 @@ const allowedOrigins = [
   "https://www.quickinvoiceng.com",
   "https://quickinvoiceng.com", // ✅ no www version too
   "http://localhost:3000",
-  "https://quick-invoice-frontend-two.vercel.app"
+  "https://quick-invoice-frontend-two.vercel.app",
+  "https://test-quickinvoice-frontend.vercel.app/",
+  "https://www.test-quickinvoice-frontend.vercel.app/"
 ];
 
 app.use(cors({
@@ -46,12 +49,9 @@ app.use('/api/payments', paymentRoute)
 
 app.use(express.json())
 
-// app.get('/', async(req, res)={
-//     res.('Welcome to QuickInvoice NG API')
-// })
 
 
-
+app.use('/api/payments', clientPaymentsRoutes)
 app.use('/api/inventory', inventoryRoutes);
 app.use('/api/users', userRoutes);
 app.use('/api/auth', authRoutes);
