@@ -84,46 +84,89 @@ const router = express.Router();
 
 // Initialize Payment
 router.post("/initiate", async (req, res) => {
-  try {
-    const { amount, email, userId } = req.body;
+//   try {
+//     const { amount, email, userId } = req.body;
 
-    // Initialize transaction with Paystack
+//     // Initialize transaction with Paystack
+//     const response = await axios.post(
+//       "https://api.paystack.co/transaction/initialize",
+//       {
+//         email,
+//         amount: amount * 100, // Paystack works in kobo
+//       },
+//       {
+//         headers: {
+//           Authorization: `Bearer ${process.env.PAYSTACK_SECRET_KEY}`,
+//         },
+//       }
+//     );
+
+//     const { reference, authorization_url } = response.data.data;
+
+//     // Save Payment in DB
+//     const payment = await Payment.create({
+//       user: userId,
+//       amount,
+//       reference,
+//       status: "pending",
+//     });
+
+//     // Log Activity
+//     await ActivityLog.create({
+//       user: userId,
+//       action: `Payment of ₦${amount} initialized`,
+//       type: "payment",
+//     });
+
+//     await payment.save()
+
+//     res.json({ authorization_url, reference });
+//   } catch (err) {
+//     console.error(err.response?.data || err.message);
+//     res.status(500).json({ error: "Payment initiation failed" });
+//   }
+
+try {
+    const { amount, email } = req.body;
+
+    if (!email || !amount) {
+      return res.status(400).json({
+        status: false,
+        message: "Email and Amount are required",
+      });
+    }
+
+    // Paystack wants amount in kobo
+    const paystackAmount = amount * 100;
+
     const response = await axios.post(
       "https://api.paystack.co/transaction/initialize",
       {
         email,
-        amount: amount * 100, // Paystack works in kobo
+        amount: paystackAmount,
+        reference: uuidv4(),
       },
       {
         headers: {
           Authorization: `Bearer ${process.env.PAYSTACK_SECRET_KEY}`,
+          "Content-Type": "application/json",
         },
       }
     );
 
-    const { reference, authorization_url } = response.data.data;
-
-    // Save Payment in DB
-    const payment = await Payment.create({
-      user: userId,
-      amount,
-      reference,
-      status: "pending",
-    });
-
-    // Log Activity
+    // Log activity
     await ActivityLog.create({
-      user: userId,
-      action: `Payment of ₦${amount} initialized`,
-      type: "payment",
+      action: "Payment Initiated",
+      details: `₦${amount} charged to ${email}`,
     });
 
-    await payment.save()
-
-    res.json({ authorization_url, reference });
-  } catch (err) {
-    console.error(err.response?.data || err.message);
-    res.status(500).json({ error: "Payment initiation failed" });
+    res.status(200).json(response.data);
+  } catch (error) {
+    console.error("Payment error:", error.response?.data || error.message);
+    res.status(500).json({
+      status: false,
+      message: error.response?.data?.message || "Payment failed",
+    });
   }
 });
 
