@@ -13,7 +13,7 @@
 // module.exports = mongoose.model("Activity", activitySchema);
 
 // models/ActivityLog.js
-import mongoose from "mongoose";
+const mongoose = require('mongoose')
 
 const ActivityLogSchema = new mongoose.Schema(
   {
@@ -24,5 +24,5 @@ const ActivityLogSchema = new mongoose.Schema(
   { timestamps: true }
 );
 
-export default mongoose.model("ActivityLog", ActivityLogSchema);
+module.exports = mongoose.model("ActivityLog", ActivityLogSchema);
 

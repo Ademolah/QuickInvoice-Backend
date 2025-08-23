@@ -1,5 +1,5 @@
 // models/Payment.js
-import mongoose from "mongoose";
+const mongoose = require('mongoose')
 
 const PaymentSchema = new mongoose.Schema(
   {
@@ -11,4 +11,4 @@ const PaymentSchema = new mongoose.Schema(
   { timestamps: true }
 );
 
-export default mongoose.model("Payment", PaymentSchema);
+module.exports= mongoose.model("Payment", PaymentSchema);

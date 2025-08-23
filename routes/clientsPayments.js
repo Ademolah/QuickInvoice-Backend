@@ -75,10 +75,10 @@
 
 // routes/paymentRoutes.js
 
-import express from "express";
-import axios from "axios";
-import Payment from "../models/Payments.js";
-import ActivityLog from "../models/Activity.js";
+const express = require('express')
+const axios = require('axios')
+const Payment = require("../models/Payments.js");
+const ActivityLog = require("../models/Activity.js");
 
 const router = express.Router();
 
@@ -169,5 +169,5 @@ router.get("/history/:userId", async (req, res) => {
   }
 });
 
-export default router;
+module.exports = router
 
