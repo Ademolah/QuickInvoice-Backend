@@ -47,7 +47,8 @@ router.post('/subaccount', auth, async (req, res) => {
     // If subaccount exists, update it; else create new
     if (user.subaccount) {
       const update = await paystack.put(`/subaccount/${user.subaccount}`, {
-        business_name: businessName || accountDetails.accountName,
+        // business_name: businessName || accountDetails.accountName,
+        business_name: accountDetails.accountName,
         settlement_bank: bank_code,
         account_number: String(accountDetails.accountNumber),
         percentage_charge: 0, // QuickInvoice takes fee as platform if needed; adjust if using split fees
