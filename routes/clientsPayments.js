@@ -1,232 +1,152 @@
+// routes/payments.js
 const express = require('express');
-const crypto = require('crypto');
-const paystack = require('../utils/paystack');
-const Payment = require('../models/Payments');
-const User = require('../models/Users');
+const axios = require('axios');
+const { body, validationResult } = require('express-validator');
 const auth = require('../middleware/authMiddleware');
+const User = require('../models/Users');
 
 const router = express.Router();
 
-/**
- * Create or refresh subaccount for the current user from stored accountDetails.
- * Expects user.accountDetails to contain bankName, accountNumber, accountName.
- * For live integration, pass bank_code; or use a map for popular banks below.
- */
-const BANK_CODE_MAP = {
-  'Access Bank': '044',
-  'GTBank': '058',
-  'First Bank': '011',
-  'Zenith Bank': '057',
-  'United Bank for Africa': '033',
-  'Union Bank': '032',
-  'FCMB': '214',
-  'Fidelity Bank': '070',
-  'Sterling Bank': '232',
-  'Keystone Bank': '082',
-  'Polaris Bank': '076',
-  'Wema Bank': '035',
-  'Kuda': '50211',
-  'Opay': '999992', // update with valid code if needed
-};
+const PAYSTACK_SECRET = process.env.PAYSTACK_SECRET_KEY;
+const FRONTEND_URL = process.env.FRONTEND_URL || 'http://localhost:3000';
+const PAYSTACK_BASE = 'https://api.paystack.co';
 
-// router.post('/subaccount', auth, async (req, res) => {
-//   try {
-//     const user = await User.findById(req.userId);
-//     if (!user) return res.status(404).json({ message: 'User not found' });
+// helper
+const paystack = axios.create({
+  baseURL: PAYSTACK_BASE,
+  headers: { Authorization: `Bearer ${PAYSTACK_SECRET}` },
+});
 
-//     const { accountDetails, businessName, email } = user;
-//     if (!accountDetails?.bankName || !accountDetails?.accountNumber || !accountDetails?.accountName) {
-//       return res.status(400).json({ message: 'Missing bank account details on user profile' });
-//     }
-
-//     const bank_code = BANK_CODE_MAP[accountDetails.bankName] || req.body.bank_code;
-//     if (!bank_code) {
-//       return res.status(400).json({ message: 'Unknown bank. Provide bank_code in body.' });
-//     }
-
-//     // If subaccount exists, update it; else create new
-//     if (user.subaccount) {
-//       const update = await paystack.put(`/subaccount/${user.subaccount}`, {
-//         // business_name: businessName || accountDetails.accountName,
-//         business_name: accountDetails.accountName,
-//         settlement_bank: bank_code,
-//         account_number: String(accountDetails.accountNumber),
-//         percentage_charge: 0, // QuickInvoice takes fee as platform if needed; adjust if using split fees
-//       });
-//       return res.json({ subaccount: update.data.data });
-//     }
-
-//     const create = await paystack.post('/subaccount', {
-//     //   business_name: businessName || accountDetails.accountName,
-//       business_name: accountDetails.accountName,
-//       settlement_bank: bank_code,
-//       account_number: String(accountDetails.accountNumber),
-//       percentage_charge: 0, // platform fee can be configured later
-//       primary_contact_email: email,
-//       metadata: { quickinvoice_user: user._id.toString() }
-//     });
-
-//     user.subaccount = create.data.data.subaccount_code;
-//     await user.save();
-
-//     res.json({ subaccount: create.data.data });
-//   } catch (err) {
-//     console.error(err?.response?.data || err);
-//     res.status(500).json({ message: 'Failed to create/update subaccount' });
-//   }
-// });
-
-
+// 1) Create subaccount ONCE
 router.post('/subaccount', auth, async (req, res) => {
   try {
     const user = await User.findById(req.userId);
     if (!user) return res.status(404).json({ message: 'User not found' });
 
-    const { accountDetails, businessName, email, subaccount } = user;
-    if (!accountDetails?.bankName || !accountDetails?.accountNumber || !accountDetails?.accountName) {
-      return res.status(400).json({ message: 'Missing bank account details on user profile' });
+    if (user.paystack?.subaccountCode) {
+      return res.json({ subaccountCode: user.paystack.subaccountCode, alreadyExists: true });
     }
 
-    const bank_code = BANK_CODE_MAP[accountDetails.bankName] || req.body.bank_code;
-    if (!bank_code) {
-      return res.status(400).json({ message: 'Unknown bank. Provide bank_code in body.' });
+    const { bankName, accountNumber, accountName } = user.accountDetails || {};
+    if (!bankName || !accountNumber || !accountName) {
+      return res.status(400).json({ message: 'Missing bank details in accountDetails' });
     }
 
-    // If subaccount already exists
-    if (subaccount) {
-      // Fetch current subaccount from Paystack
-      const existing = await paystack.get(`/subaccount/${subaccount}`);
-      const data = existing.data.data;
-
-      // Check if anything has changed
-      const needsUpdate =
-        data.settlement_bank !== bank_code ||
-        data.account_number !== String(accountDetails.accountNumber) ||
-        data.business_name !== accountDetails.accountName;
-
-      if (needsUpdate) {
-        const update = await paystack.put(`/subaccount/${subaccount}`, {
-          business_name: accountDetails.accountName,
-          settlement_bank: bank_code,
-          account_number: String(accountDetails.accountNumber),
-          percentage_charge: 0,
-        });
-        return res.json({ subaccount: update.data.data, updated: true });
-      }
-
-      // No update needed
-      return res.json({ subaccount: data, updated: false });
+    // Paystack requires bank code, not bank name. For production, map bankName -> bank_code via their bank list API.
+    // For now, if you already stored bank_code, use it instead of bankName.
+    // Example: assume you stored bank_code in accountDetails.bankCode
+    const bankCode = user.accountDetails.bankCode;
+    if (!bankCode) {
+      return res.status(400).json({ message: 'Missing bankCode; map bankName to bank_code and store in accountDetails.bankCode' });
     }
 
-    // Otherwise create new subaccount
-    const create = await paystack.post('/subaccount', {
-      business_name: accountDetails.accountName,
-      settlement_bank: bank_code,
-      account_number: String(accountDetails.accountNumber),
-      percentage_charge: 0,
-      primary_contact_email: email,
-      metadata: { quickinvoice_user: user._id.toString() }
-    });
+    const percentage_charge = 100 - (user.paystack?.splitPercentage ?? 98); // platform’s share (e.g. 2)
+    const payload = {
+      business_name: user.businessName,
+      settlement_bank: bankCode,
+      account_number: accountNumber,
+      percentage_charge: percentage_charge, // percent the platform takes
+    };
 
-    user.subaccount = create.data.data.subaccount_code;
+    const { data } = await paystack.post('/subaccount', payload);
+    if (!data.status) return res.status(400).json({ message: data.message || 'Subaccount creation failed' });
+
+    user.paystack.subaccountCode = data.data.subaccount_code;
     await user.save();
 
-    res.json({ subaccount: create.data.data, created: true });
-
+    res.json({ subaccountCode: data.data.subaccount_code, alreadyExists: false });
   } catch (err) {
-    console.error(err?.response?.data || err);
-    res.status(500).json({ message: 'Failed to create/update subaccount' });
+    console.error('Subaccount error:', err?.response?.data || err.message);
+    res.status(500).json({ message: 'Server error creating subaccount' });
   }
 });
 
-/**
- * Initialize a payment.
- * Body: { amount, description }
- * Uses user.subaccountCode for split settlement and user.email for customer email.
- */
-router.post('/initiate', auth, async (req, res) => {
-  try {
-    const { amount, description } = req.body;
-    if (!amount || Number(amount) <= 0) return res.status(400).json({ message: 'Amount required' });
+// 2) Create payment link (initialize transaction) + return authorization_url
+router.post(
+  '/create-link',
+  auth,
+  body('amount').isNumeric().withMessage('Amount is required'),
+  async (req, res) => {
+    try {
+      const errors = validationResult(req);
+      if (!errors.isEmpty()) return res.status(400).json({ errors: errors.array() });
 
-    const user = await User.findById(req.userId);
-    if (!user) return res.status(404).json({ message: 'User not found' });
-    if (!user.subaccount) return res.status(400).json({ message: 'No subaccount yet. Create one first.' });
+      const { amount, description } = req.body;
+      const user = await User.findById(req.userId);
+      if (!user) return res.status(404).json({ message: 'User not found' });
 
-    const amountInKobo = Math.round(Number(amount) * 100);
-
-    const init = await paystack.post('/transaction/initialize', {
-      email: user.email,
-      amount: amountInKobo,
-      currency: 'NGN',
-      subaccount: user.subaccount,
-      bearer: 'subaccount', // subaccount bears Paystack fees; adjust to 'account' if platform bears fees
-      metadata: {
-        quickinvoice_user: user._id.toString(),
-        description: description || 'NFC Payment'
+      // Ensure subaccount exists; if not, bail (or auto-create by calling /subaccount here)
+      if (!user.paystack?.subaccountCode) {
+        return res.status(400).json({ message: 'No subaccount for this user. Create it first.' });
       }
-    });
 
-    const { authorization_url, reference } = init.data.data;
+      // Paystack expects amount in kobo
+      const kobo = Math.round(Number(amount) * 100);
 
-    await Payment.create({
-      userId: user._id,
-      amount: amountInKobo,
-      reference,
-      description: description || 'NFC Payment',
-      status: 'pending',
-      authUrl: authorization_url
-    });
+      const initPayload = {
+        amount: kobo,
+        email: user.email,
+        callback_url: `${FRONTEND_URL}/payments/callback`, // Create a simple page to show result
+        metadata: {
+          userId: String(user._id),
+          businessName: user.businessName,
+          description: description || 'Payment',
+        },
+        subaccount: user.paystack.subaccountCode, // route to merchant’s subaccount
+        // optional: bearer: 'subaccount' (fees charged to subaccount instead)
+      };
 
-    res.json({ authorization_url, reference });
-  } catch (err) {
-    console.error(err?.response?.data || err);
-    res.status(500).json({ message: 'Payment initialization failed' });
+      const { data } = await paystack.post('/transaction/initialize', initPayload);
+      if (!data.status) return res.status(400).json({ message: data.message || 'Failed to initialize' });
+
+      res.json({
+        authorization_url: data.data.authorization_url,
+        access_code: data.data.access_code,
+        reference: data.data.reference,
+      });
+    } catch (err) {
+      console.error('Create-link error:', err?.response?.data || err.message);
+      res.status(500).json({ message: 'Server error initializing payment' });
+    }
   }
-});
+);
 
-/**
- * Verify a payment by reference
- */
+// 3) Verify payment by reference (for polling)
 router.get('/verify/:reference', auth, async (req, res) => {
   try {
     const { reference } = req.params;
-    const verify = await paystack.get(`/transaction/verify/${reference}`);
-    const data = verify.data.data;
-
-    const status = data.status === 'success' ? 'success' : (data.status === 'failed' ? 'failed' : 'pending');
-
-    const payment = await Payment.findOneAndUpdate(
-      { reference },
-      { status, metadata: data },
-      { new: true }
-    );
-
-    if (!payment) return res.status(404).json({ message: 'Payment not found' });
-    res.json(payment);
+    const { data } = await paystack.get(`/transaction/verify/${reference}`);
+    res.json(data);
   } catch (err) {
-    console.error(err?.response?.data || err);
-    res.status(500).json({ message: 'Verification failed' });
+    console.error('Verify error:', err?.response?.data || err.message);
+    res.status(500).json({ message: 'Server error verifying transaction' });
   }
 });
 
-/**
- * Webhook (remember to set raw body for this route in server.js)
- */
-router.post('/nfcWebhook', express.raw({ type: 'application/json' }), async (req, res) => {
+// 4) Webhook to confirm payment (configure on Paystack dashboard)
+router.post('/webhook', express.json({ type: '*/*' }), (req, res) => {
   try {
-    const signature = req.headers['x-paystack-signature'];
-    const hash = crypto.createHmac('sha512', process.env.PAYSTACK_SECRET_KEY).update(req.body).digest('hex');
-    if (signature !== hash) return res.status(401).send('Invalid signature');
+    const hash = require('crypto')
+      .createHmac('sha512', PAYSTACK_SECRET)
+      .update(JSON.stringify(req.body))
+      .digest('hex');
 
-    const event = JSON.parse(req.body.toString());
-    if (event?.event === 'charge.success') {
-      const ref = event.data.reference;
-      await Payment.findOneAndUpdate({ reference: ref }, { status: 'success', metadata: event.data });
+    if (req.headers['x-paystack-signature'] !== hash) {
+      return res.status(401).send('Invalid signature');
     }
+
+    const event = req.body;
+    // Handle events (charge.success, etc.)
+    // Example:
+    if (event.event === 'charge.success') {
+      const ref = event.data.reference;
+      // TODO: update your DB payments collection with status=success for ref
+      console.log('Payment success for ref:', ref);
+    }
+
     res.sendStatus(200);
   } catch (err) {
-    console.error(err);
+    console.error('Webhook error:', err.message);
     res.sendStatus(500);
   }
 });
