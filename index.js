@@ -26,7 +26,7 @@ connectDb()
 const allowedOrigins = [
   "https://www.quickinvoiceng.com",
   "https://quickinvoiceng.com", // ✅ no www version too
-  "http://localhost:3000",
+  // "http://localhost:3000",
   "https://quick-invoice-frontend-two.vercel.app",
   "https://test-quickinvoice-frontend.vercel.app",
   "https://www.test-quickinvoice-frontend.vercel.app"
@@ -43,7 +43,7 @@ app.use(cors({
   credentials: true
 }));
 
-app.use('/api/payments/nfcWebhook', express.raw({ type: 'application/json' }));
+// app.use('/api/payments/nfcWebhook', express.raw({ type: 'application/json' }));
 
 app.use('/api/payments', paymentRoute)
 
@@ -51,7 +51,7 @@ app.use(express.json())
 
 
 
-app.use('/api/payments', clientPaymentsRoutes)
+// app.use('/api/payments', clientPaymentsRoutes)
 app.use('/api/inventory', inventoryRoutes);
 app.use('/api/users', userRoutes);
 app.use('/api/auth', authRoutes);
