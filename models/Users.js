@@ -10,8 +10,7 @@ const userSchema = new mongoose.Schema({
   bankName: { type: String },
   accountNumber: { type: String },
   accountName: { type: String }
-},
-subaccount: { type: String }, // from Paystack
+},// from Paystack
 plan: { type: String, enum: ["free", "pro"], default: "free" },
 usage: {
     invoicesThisMonth: { type: Number, default: 0 },
@@ -19,6 +18,13 @@ usage: {
     lastReset: { type: Date, default: Date.now }
   },
   proExpires: { type: Date, default: null },
+
+  currency: {
+  type: String,
+  enum: ["NGN", "USD", "GBP", "EUR"], // extendable
+  default: "NGN"
+}
+
   
 }, {timestamps: true});
 

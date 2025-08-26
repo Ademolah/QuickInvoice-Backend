@@ -1,154 +1,431 @@
-// routes/payments.js
-const express = require('express');
-const axios = require('axios');
-const { body, validationResult } = require('express-validator');
-const auth = require('../middleware/authMiddleware');
-const User = require('../models/Users');
-
-const router = express.Router();
+// routes/paymentRoutes.js
+const router = require("express").Router();
+const axios = require("axios");
+const auth = require("../middleware/authMiddleware");
+const Payment = require("../models/Payments");
+const User = require("../models/Users");
 
 const PAYSTACK_SECRET = process.env.PAYSTACK_SECRET_KEY;
-const FRONTEND_URL = process.env.FRONTEND_URL || 'http://localhost:3000';
-const PAYSTACK_BASE = 'https://api.paystack.co';
 
-// helper
-const paystack = axios.create({
-  baseURL: PAYSTACK_BASE,
-  headers: { Authorization: `Bearer ${PAYSTACK_SECRET}` },
-});
-
-// 1) Create subaccount ONCE
-router.post('/subaccount', auth, async (req, res) => {
+// 📌 Get list of banks
+router.get("/banks", auth, async (req, res) => {
   try {
-    const user = await User.findById(req.userId);
-    if (!user) return res.status(404).json({ message: 'User not found' });
-
-    if (user.paystack?.subaccountCode) {
-      return res.json({ subaccountCode: user.paystack.subaccountCode, alreadyExists: true });
-    }
-
-    const { bankName, accountNumber, accountName } = user.accountDetails || {};
-    if (!bankName || !accountNumber || !accountName) {
-      return res.status(400).json({ message: 'Missing bank details in accountDetails' });
-    }
-
-    // Paystack requires bank code, not bank name. For production, map bankName -> bank_code via their bank list API.
-    // For now, if you already stored bank_code, use it instead of bankName.
-    // Example: assume you stored bank_code in accountDetails.bankCode
-    const bankCode = user.accountDetails.bankCode;
-    if (!bankCode) {
-      return res.status(400).json({ message: 'Missing bankCode; map bankName to bank_code and store in accountDetails.bankCode' });
-    }
-
-    const percentage_charge = 100 - (user.paystack?.splitPercentage ?? 98); // platform’s share (e.g. 2)
-    const payload = {
-      business_name: user.businessName,
-      settlement_bank: bankCode,
-      account_number: accountNumber,
-      percentage_charge: percentage_charge, // percent the platform takes
-    };
-
-    const { data } = await paystack.post('/subaccount', payload);
-    if (!data.status) return res.status(400).json({ message: data.message || 'Subaccount creation failed' });
-
-    user.paystack.subaccountCode = data.data.subaccount_code;
-    await user.save();
-
-    res.json({ subaccountCode: data.data.subaccount_code, alreadyExists: false });
+    const resp = await axios.get("https://api.paystack.co/bank", {
+      headers: { Authorization: `Bearer ${PAYSTACK_SECRET}` },
+    });
+    res.json(resp.data.data);
   } catch (err) {
-    console.error('Subaccount error:', err?.response?.data || err.message);
-    res.status(500).json({ message: 'Server error creating subaccount' });
+    res.status(500).json({ message: "Failed to fetch banks" });
   }
 });
 
-// 2) Create payment link (initialize transaction) + return authorization_url
-router.post(
-  '/create-link',
-  auth,
-  body('amount').isNumeric().withMessage('Amount is required'),
-  async (req, res) => {
-    try {
-      const errors = validationResult(req);
-      if (!errors.isEmpty()) return res.status(400).json({ errors: errors.array() });
+// 📌 Create Payment Link
+// router.post("/create-link", auth, async (req, res) => {
+//   try {
+//     const { amount, description } = req.body;
+//     const user = await User.findById(req.userId);
+//     if (!user?.paystack?.subaccountCode) {
+//       return res.status(400).json({ message: "No subaccount linked" });
+//     }
 
-      const { amount, description } = req.body;
-      const user = await User.findById(req.userId);
-      if (!user) return res.status(404).json({ message: 'User not found' });
+//     const reference = `QINV-${Date.now()}-${Math.floor(Math.random()*1000)}`;
 
-      // Ensure subaccount exists; if not, bail (or auto-create by calling /subaccount here)
-      if (!user.paystack?.subaccountCode) {
-        return res.status(400).json({ message: 'No subaccount for this user. Create it first.' });
-      }
+//     const resp = await axios.post("https://api.paystack.co/transaction/initialize", {
+//       email: user.email,
+//       amount: amount * 100, // in kobo
+//       reference,
+//       subaccount: user.paystack.subaccountCode,
+//       split: {
+//         type: "percentage",
+//         bearer_type: "subaccount",
+//         subaccounts: [
+//           { subaccount: user.paystack.subaccountCode, share: user.paystack.splitPercentage },
+//         ],
+//       },
+//       metadata: { description, userId: user._id },
+//     }, {
+//       headers: { Authorization: `Bearer ${PAYSTACK_SECRET}` },
+//     });
 
-      // Paystack expects amount in kobo
-      const kobo = Math.round(Number(amount) * 100);
+//     const payment = new Payment({
+//       user: user._id,
+//       reference,
+//       amount,
+//       description,
+//       status: "pending",
+//     });
+//     await payment.save();
 
-      const initPayload = {
-        amount: kobo,
-        email: user.email,
-        callback_url: `${FRONTEND_URL}/payments/callback`, // Create a simple page to show result
-        metadata: {
-          userId: String(user._id),
-          businessName: user.businessName,
-          description: description || 'Payment',
-        },
-        subaccount: user.paystack.subaccountCode, // route to merchant’s subaccount
-        // optional: bearer: 'subaccount' (fees charged to subaccount instead)
-      };
+//     res.json({
+//       authorization_url: resp.data.data.authorization_url,
+//       reference,
+//     });
+//   } catch (err) {
+//     console.error("create-link failed", err.response?.data || err.message);
+//     res.status(500).json({ message: "Failed to create payment link" });
+//   }
+// });
 
-      const { data } = await paystack.post('/transaction/initialize', initPayload);
-      if (!data.status) return res.status(400).json({ message: data.message || 'Failed to initialize' });
+// // 📌 Create Payment Link
+// router.post("/create-link", auth, async (req, res) => {
+//   try {
+//     const { amount, description } = req.body;
+//     const user = await User.findById(req.userId);
+//     if (!user?.paystack?.subaccountCode) {
+//       return res.status(400).json({ message: "No subaccount linked" });
+//     }
 
-      res.json({
-        authorization_url: data.data.authorization_url,
-        access_code: data.data.access_code,
-        reference: data.data.reference,
-      });
-    } catch (err) {
-      console.error('Create-link error:', err?.response?.data || err.message);
-      res.status(500).json({ message: 'Server error initializing payment' });
+//     const reference = `QINV-${Date.now()}-${Math.floor(Math.random() * 1000)}`;
+
+//     // ✅ Correct structure for Paystack initialize
+//     const resp = await axios.post(
+//       "https://api.paystack.co/transaction/initialize",
+//       {
+//         email: user.email,
+//         amount: amount * 100, // Paystack expects kobo
+//         reference,
+//         subaccount: user.paystack.subaccountCode, // ✅ attach subaccount
+//         bearer: "subaccount", // ✅ charges go to subaccount
+//         metadata: {
+//           description,
+//           userId: user._id,
+//         },
+//       },
+//       {
+//         headers: { Authorization: `Bearer ${PAYSTACK_SECRET}` },
+//       }
+//     );
+
+//     // Save payment in DB
+//     const payment = new Payment({
+//       user: user._id,
+//       reference,
+//       amount,
+//       description,
+//       status: "pending",
+//     });
+//     await payment.save();
+
+//     res.json({
+//       authorization_url: resp.data.data.authorization_url,
+//       reference,
+//     });
+//   } catch (err) {
+//     console.error("create-link failed", err.response?.data || err.message);
+//     res.status(500).json({ message: "Failed to create payment link" });
+//   }
+// });
+
+// 📌 Create Payment Link
+router.post("/create-link", auth, async (req, res) => {
+  try {
+    const { amount, description, invoiceId } = req.body; // ✅ now accept invoiceId
+    const user = await User.findById(req.userId);
+
+    if (!user?.paystack?.subaccountCode) {
+      return res.status(400).json({ message: "No subaccount linked" });
     }
-  }
-);
 
-// 3) Verify payment by reference (for polling)
-router.get('/verify/:reference', auth, async (req, res) => {
+    const reference = `QINV-${Date.now()}-${Math.floor(Math.random() * 1000)}`;
+
+    // ✅ Initialize Paystack transaction
+    const resp = await axios.post(
+      "https://api.paystack.co/transaction/initialize",
+      {
+        email: user.email,
+        amount: amount * 100, // Paystack expects kobo
+        reference,
+        subaccount: user.paystack.subaccountCode,
+        bearer: "subaccount",
+        metadata: {
+          description,
+          userId: user._id,
+          invoiceId, // ✅ store invoiceId in Paystack metadata too
+        },
+      },
+      {
+        headers: { Authorization: `Bearer ${PAYSTACK_SECRET}` },
+      }
+    );
+
+    // ✅ Save payment in DB
+    const payment = new Payment({
+      user: user._id,
+      reference,
+      amount,
+      description,
+      invoiceId,  // ✅ store invoiceId
+      status: "pending",
+    });
+    await payment.save();
+
+    res.json({
+      authorization_url: resp.data.data.authorization_url,
+      reference,
+      invoiceId, // ✅ send back invoiceId for frontend tracking
+    });
+  } catch (err) {
+    console.error("create-link failed", err.response?.data || err.message);
+    res.status(500).json({ message: "Failed to create payment link" });
+  }
+});
+
+// 📌 Verify Payment
+router.get("/verify/:reference", auth, async (req, res) => {
   try {
     const { reference } = req.params;
-    const { data } = await paystack.get(`/transaction/verify/${reference}`);
-    res.json(data);
+
+    // ✅ Call Paystack verify API
+    const resp = await axios.get(
+      `https://api.paystack.co/transaction/verify/${reference}`,
+      {
+        headers: { Authorization: `Bearer ${PAYSTACK_SECRET}` },
+      }
+    );
+
+    const data = resp.data.data;
+    if (!data) {
+      return res.status(404).json({ message: "Transaction not found" });
+    }
+
+    // ✅ Extract status & useful details
+    const status = data.status; // success, failed, or abandoned
+    const paidAmount = data.amount / 100; // convert kobo to naira
+    const paidAt = data.paid_at;
+
+    // ✅ Update payment in DB
+    const payment = await Payment.findOneAndUpdate(
+      { reference },
+      {
+        status,
+        amount: paidAmount,
+        paidAt,
+        gateway_response: data.gateway_response,
+        channel: data.channel,
+        currency: data.currency,
+      },
+      { new: true }
+    );
+
+    if (!payment) {
+      return res.status(404).json({ message: "Payment record not found" });
+    }
+
+    res.json({
+      message: "Payment verification successful",
+      status,
+      payment,
+      paystack: data,
+    });
   } catch (err) {
-    console.error('Verify error:', err?.response?.data || err.message);
-    res.status(500).json({ message: 'Server error verifying transaction' });
+    console.error("verify error:", err.response?.data || err.message);
+    res.status(500).json({ message: "Verification failed" });
   }
 });
 
-// 4) Webhook to confirm payment (configure on Paystack dashboard)
-router.post('/webhook', express.json({ type: '*/*' }), (req, res) => {
+
+
+
+// // 📌 Verify Payment
+// router.get("/verify/:reference", auth, async (req, res) => {
+//   try {
+//     const { reference } = req.params;
+//     const resp = await axios.get(`https://api.paystack.co/transaction/verify/${reference}`, {
+//       headers: { Authorization: `Bearer ${PAYSTACK_SECRET}` },
+//     });
+
+//     const status = resp.data.data.status;
+//     await Payment.findOneAndUpdate({ reference }, { status });
+
+//     res.json({ status, data: resp.data.data });
+//   } catch (err) {
+//     res.status(500).json({ message: "Verification failed" });
+//   }
+// });
+
+// ✅ Verify payment by invoiceId (QINV-...)
+router.get("/verify/:invoiceId", async (req, res) => {
+  const { invoiceId } = req.params;
+
   try {
-    const hash = require('crypto')
-      .createHmac('sha512', PAYSTACK_SECRET)
-      .update(JSON.stringify(req.body))
-      .digest('hex');
-
-    if (req.headers['x-paystack-signature'] !== hash) {
-      return res.status(401).send('Invalid signature');
+    // 1. Look up invoice in DB
+    const invoice = await Invoice.findOne({ invoiceId });
+    if (!invoice) {
+      return res.status(404).json({ error: "Invoice not found" });
     }
 
-    const event = req.body;
-    // Handle events (charge.success, etc.)
-    // Example:
-    if (event.event === 'charge.success') {
-      const ref = event.data.reference;
-      // TODO: update your DB payments collection with status=success for ref
-      console.log('Payment success for ref:', ref);
+    // 2. Ensure we saved Paystack reference when creating invoice/payment
+    if (!invoice.paystackReference) {
+      return res.status(400).json({ error: "No Paystack reference for this invoice" });
     }
 
-    res.sendStatus(200);
+    // 3. Call Paystack verify endpoint with stored reference
+    const verifyRes = await axios.get(
+      `https://api.paystack.co/transaction/verify/${invoice.paystackReference}`,
+      {
+        headers: {
+          Authorization: `Bearer ${process.env.PAYSTACK_SECRET_KEY}`,
+        },
+      }
+    );
+
+    const data = verifyRes.data;
+
+    // 4. If successful, update invoice status
+    if (data.data.status === "success") {
+      invoice.status = "paid";
+      await invoice.save();
+    }
+
+    res.json({
+      status: invoice.status,
+      paystack: data.data,
+    });
   } catch (err) {
-    console.error('Webhook error:', err.message);
-    res.sendStatus(500);
+    console.error("Verify error:", err.message);
+    res.status(500).json({ error: "Payment verification failed" });
   }
+});
+
+
+
+// // POST /api/payments/onboard-bank
+// router.post("/onboard-bank", auth, async (req, res) => {
+//   try {
+//     const { businessName, bankCode, accountNumber } = req.body;
+
+//     if (!businessName || !bankCode || !accountNumber) {
+//       return res.status(400).json({
+//         status: false,
+//         message: "Missing required fields",
+//       });
+//     }
+
+//     // Create a subaccount on Paystack
+//     const response = await axios.post(
+//       "https://api.paystack.co/subaccount",
+//       {
+//         business_name: businessName,
+//         settlement_bank: bankCode,
+//         account_number: accountNumber,
+//         percentage_charge: 0, // for now no split fee
+//       },
+//       {
+//         headers: {
+//           Authorization: `Bearer ${process.env.PAYSTACK_SECRET_KEY}`,
+//           "Content-Type": "application/json",
+//         },
+//       }
+//     );
+
+//     return res.json({
+//       status: true,
+//       message: "Subaccount created",
+//       data: response.data.data,
+//     });
+//   } catch (error) {
+//     console.error("onboard-bank failed", error.response?.data || error.message);
+//     return res.status(500).json({
+//       status: false,
+//       message: "Failed to onboard bank",
+//       error: error.response?.data || error.message,
+//     });
+//   }
+// });
+
+// GET /api/payments/banks
+
+// POST /api/payments/onboard-bank
+router.post("/onboard-bank", auth, async (req, res) => {
+  try {
+    const { businessName, bankCode, accountNumber } = req.body;
+
+    // Validate input
+    if (!businessName || !bankCode || !accountNumber) {
+      return res.status(400).json({
+        status: false,
+        message: "businessName, bankCode, and accountNumber are required",
+      });
+    }
+
+    // Call Paystack API to create a subaccount
+    const response = await axios.post(
+      "https://api.paystack.co/subaccount",
+      {
+        business_name: businessName,
+        settlement_bank: bankCode,
+        account_number: accountNumber,
+        percentage_charge: 0, // adjust if you want platform fees later
+      },
+      {
+        headers: {
+          Authorization: `Bearer ${process.env.PAYSTACK_SECRET_KEY}`,
+          "Content-Type": "application/json",
+        },
+      }
+    );
+
+    // Success response
+    return res.status(201).json({
+      status: true,
+      message: "Subaccount created successfully",
+      data: response.data.data,
+    });
+
+  } catch (error) {
+    console.error("❌ Onboard-bank error:", error.response?.data || error.message);
+
+    return res.status(error.response?.status || 500).json({
+      status: false,
+      message: "Failed to onboard bank",
+      error: error.response?.data?.message || error.message,
+    });
+  }
+});
+
+
+router.get("/banks", auth, async (req, res) => {
+  try {
+    const response = await axios.get("https://api.paystack.co/bank", {
+      headers: {
+        Authorization: `Bearer ${process.env.PAYSTACK_SECRET_KEY}`,
+      },
+    });
+
+    return res.json({
+      status: true,
+      data: response.data.data, // list of banks
+    });
+  } catch (error) {
+    console.error("banks fetch failed", error.response?.data || error.message);
+    return res.status(500).json({
+      status: false,
+      message: "Failed to fetch banks",
+      error: error.response?.data || error.message,
+    });
+  }
+});
+
+
+
+// 📌 Recent Payments
+router.get("/my", auth, async (req, res) => {
+  const payments = await Payment.find({ user: req.userId }).sort({ createdAt: -1 });
+  res.json(payments);
 });
 
 module.exports = router;
+
+
+
+
+
+
+
+
+
+
+
+
+
+

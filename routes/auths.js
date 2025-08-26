@@ -3,6 +3,8 @@ const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 const User = require('../models/Users');
 const sendWelcomeEmail = require('../utils/sendWelcomeEmail')
+const Payments = require('../models/Payments')
+const axios = require("axios");
 
 const router = express.Router();
 
@@ -44,6 +46,7 @@ router.post("/register", async (req, res) => {
       process.env.JWT_SECRET,
       { expiresIn: "7d" }
     );
+
 
     await sendWelcomeEmail(name, email, businessName)
 
@@ -114,5 +117,78 @@ router.post("/login", async (req, res) => {
     res.status(500).json({ message: "Server error" });
   }
 });
+
+
+
+
+// router.post("/register", async (req, res) => {
+//   try {
+//     const { name, email, phone, businessName, password } = req.body;
+
+//     // Basic validation
+//     if (!name || !email || !phone || !businessName || !password) {
+//       return res.status(400).json({ message: "All fields are required" });
+//     }
+
+//     // Check if email or phone already exists
+//     const existingUser = await User.findOne({ $or: [{ email }, { phone }] });
+//     if (existingUser) {
+//       return res.status(400).json({ message: "Email or phone already in use" });
+//     }
+
+//     // Hash password
+//     const salt = await bcrypt.genSalt(10);
+//     const passwordHash = await bcrypt.hash(password, salt);
+
+//     // Create user
+//     const newUser = new User({
+//       name,
+//       email,
+//       phone,
+//       businessName,
+//       passwordHash
+//     });
+
+//     await newUser.save();
+
+//     // 🔹 Create placeholder subaccount for this user
+//     const newPayment = new Payments({
+//       user: newUser._id,
+//       subaccountId: "placeholder-subaccount", // temporary ID
+//       bank: "placeholder-bank",
+//       account_number: "0000000000",
+//       account_name: newUser.name,
+//     });
+
+
+//     await newPayment.save();
+
+//     // Create JWT token
+//     const token = jwt.sign(
+//       { id: newUser._id, email: newUser.email },
+//       process.env.JWT_SECRET,
+//       { expiresIn: "7d" }
+//     );
+
+//     await sendWelcomeEmail(name, email, businessName);
+
+//     console.log(`${newUser.name} just signed up`);
+//     res.status(201).json({
+//       message: "User registered successfully",
+//       token,
+//       user: {
+//         id: newUser._id,
+//         name: newUser.name,
+//         email: newUser.email,
+//         phone: newUser.phone,
+//         businessName: newUser.businessName
+//       }
+//     });
+//   } catch (error) {
+//     console.error("Register error:", error);
+//     res.status(500).json({ message: "Server error" });
+//   }
+// });
+
 
 module.exports = router;
