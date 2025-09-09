@@ -8,9 +8,19 @@ const checkUsage= async (req, res, next) => {
       if (!user) return res.status(404).json({ message: 'User not found' });
 
       // Reset monthly usage if new month
-      const now = new Date();
-      if (!user.usage) user.usage = { invoicesThisMonth:0, receiptsThisMonth:0, lastReset: now };
-      if (new Date(user.usage.lastReset).getMonth() !== now.getMonth()) {
+      // const now = new Date();
+      // if (!user.usage) user.usage = { invoicesThisMonth:0, receiptsThisMonth:0, lastReset: now };
+      // if (new Date(user.usage.lastReset).getMonth() !== now.getMonth()) {
+      //   user.usage.invoicesThisMonth = 0;
+      //   user.usage.receiptsThisMonth = 0;
+      //   user.usage.lastReset = now;
+      //   await user.save();
+      // }
+
+      // ✅ Rolling 30-day reset logic
+      const lastReset = new Date(user.usage.lastReset || now);
+      const daysSinceReset = (now - lastReset) / (1000 * 60 * 60 * 24); // in days
+      if (daysSinceReset >= 30) {
         user.usage.invoicesThisMonth = 0;
         user.usage.receiptsThisMonth = 0;
         user.usage.lastReset = now;
