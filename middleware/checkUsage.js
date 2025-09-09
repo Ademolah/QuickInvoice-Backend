@@ -17,6 +17,11 @@ const checkUsage= async (req, res, next) => {
       //   await user.save();
       // }
 
+      const now = new Date();
+      if (!user.usage) {
+        user.usage = { invoicesThisMonth: 0, receiptsThisMonth: 0, lastReset: now };
+      }
+
       // ✅ Rolling 30-day reset logic
       const lastReset = new Date(user.usage.lastReset || now);
       const daysSinceReset = (now - lastReset) / (1000 * 60 * 60 * 24); // in days
