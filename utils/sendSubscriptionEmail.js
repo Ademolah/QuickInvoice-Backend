@@ -25,7 +25,7 @@ const sendWelcomeEmail = async(name, email)=>{
     const info = await transporter.sendMail({
         from: '"QuickInvoice NG" <hi@quickinvoiceng.com>',
         to: email,
-        subject: "Welcome email",
+        subject: "Subscription email",
         text: "Hello world?", // plain‑text body
         html: `
            <!DOCTYPE html>
@@ -53,7 +53,7 @@ const sendWelcomeEmail = async(name, email)=>{
         </p>
 
         <p style="margin:20px 0; font-size:16px;">
-          You now have full access to all premium features of QuickInvoice NG. Start creating unlimited invoices today!
+          You now have full access to all premium features of QuickInvoice NG. Start creating unlimited invoices, receipts and enjoy all Pro features today!
         </p>
 
         <a href="https://quickinvoiceng.com/billing" 
