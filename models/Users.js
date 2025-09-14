@@ -22,7 +22,7 @@ usage: {
 
   currency: {
   type: String,
-  enum: ["NGN", "USD", "GBP", "EUR", "TUR"], // extendable
+  enum: ["NGN", "USD", "GBP", "EUR", "TRY"], // extendable
   default: "NGN"
 }
 
