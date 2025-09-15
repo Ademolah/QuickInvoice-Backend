@@ -4,7 +4,7 @@ const userSchema = new mongoose.Schema({
   name: { type: String, required: true },
   email: { type: String, required: true, unique: true, index: true },
   phone: {type: String, required: true, unique: true},
-  dialCode: { type: String, required: true }, // e.g. +234, +1
+  // dialCode: { type: String, required: true }, // e.g. +234, +1
   businessName: { type: String, required: true, unique: true },
   passwordHash: { type: String, required: true },
   accountDetails: {
