@@ -4,6 +4,9 @@ const auth = require('../middleware/authMiddleware');
 const { updateAccountDetails } = require('../controllers/usersController')
 const {changePassword} = require('../controllers/usersController')
 const axios = require('axios')
+const asyncHandler = require('express-async-handler')
+const upload = require('../middleware/upload')
+const cloudinary = require('../utils/cloudinary')
 
 
 const router = express.Router();
@@ -76,6 +79,53 @@ router.get("/verify/:reference", auth, async (req, res) => {
     res.status(500).json({ error: error.response.data });
   }
 });
+
+router.post('/avatar',auth, upload.single('image'),asyncHandler(async (req, res) => {
+    if (!req.file) {
+      return res.status(400).json({ message: 'No image file provided' });
+    }
+    const user = await User.findById(req.userId);
+    if (!user) return res.status(404).json({ message: 'User not found' });
+    // Upload to Cloudinary via upload_stream to avoid writing to disk
+    const bufferStreamUpload = (buffer) =>
+      new Promise((resolve, reject) => {
+        const stream = cloudinary.uploader.upload_stream(
+          {
+            folder: `quickinvoice_ng/avatars`, // optional folder
+            transformation: [
+              { width: 800, height: 800, crop: "limit" }, // limit size
+              { quality: "auto" }
+            ],
+            format: 'png', // normalize format (optional)
+          },
+          (error, result) => {
+            if (error) return reject(error);
+            resolve(result);
+          }
+        );
+        stream.end(buffer);
+      });
+    // If user already has a public id -> try deleting old image (best effort)
+    if (user.avatarPublicId) {
+      try {
+        await cloudinary.uploader.destroy(user.avatarPublicId);
+      } catch (err) {
+        console.warn('Failed to delete previous avatar from Cloudinary', err.message || err);
+      }
+    }
+    // Upload new image
+    const result = await bufferStreamUpload(req.file.buffer);
+    // Save URL and public_id to user
+    user.avatar = result.secure_url;
+    user.avatarPublicId = result.public_id;
+    await user.save();
+    res.json({
+      message: 'Avatar uploaded successfully',
+      avatar: user.avatar,
+      avatarPublicId: user.avatarPublicId,
+    });
+  })
+);
 
 
 

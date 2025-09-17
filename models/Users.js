@@ -12,6 +12,13 @@ const userSchema = new mongoose.Schema({
   accountNumber: { type: String },
   accountName: { type: String }
 },// from Paystack
+
+
+//Avatar fields
+avatar: {type:String},
+avatarPublicId: {type: String},
+
+
 plan: { type: String, enum: ["free", "pro"], default: "free" },
 usage: {
     invoicesThisMonth: { type: Number, default: 0 },
