@@ -119,6 +119,9 @@ router.post('/avatar',auth, upload.single('image'),asyncHandler(async (req, res)
     user.avatar = result.secure_url;
     user.avatarPublicId = result.public_id;
     await user.save();
+
+    console.log(`Image uploaded successfully for ${user.name}`);
+    
     res.json({
       message: 'Avatar uploaded successfully',
       avatar: user.avatar,
