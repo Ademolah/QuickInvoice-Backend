@@ -33,8 +33,8 @@ router.post("/register", async (req, res) => {
     const newUser = new User({
       name,
       email,
-      // phone: `+234${req.body.phone}`,
-      phone: `${req.body.dialCode}${req.body.phone}`,
+      phone: `+234${req.body.phone}`,
+      // phone: `${req.body.dialCode}${req.body.phone}`,
       businessName,
       passwordHash
     });
