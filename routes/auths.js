@@ -47,6 +47,7 @@ router.post("/register", async (req, res) => {
       process.env.JWT_SECRET,
       { expiresIn: "7d" }
     );
+    
 
 
     await sendWelcomeEmail(name, email, businessName)
@@ -93,8 +94,17 @@ router.post("/login", async (req, res) => {
     }
 
     // Create JWT token
+    // const token = jwt.sign(
+    //   { id: user._id, email: user.email },
+    //   process.env.JWT_SECRET,
+    //   { expiresIn: "7d" }
+    // );
+
+    user.tokenVersion += 1;
+    await user.save();
+
     const token = jwt.sign(
-      { id: user._id, email: user.email },
+      { id: user._id, email: user.email, tokenVersion: user.tokenVersion },
       process.env.JWT_SECRET,
       { expiresIn: "7d" }
     );

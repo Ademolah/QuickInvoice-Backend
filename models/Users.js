@@ -13,7 +13,7 @@ const userSchema = new mongoose.Schema({
   accountName: { type: String }
 },// from Paystack
 
-
+tokenVersion: { type: Number, default: 0 },
 //Avatar fields
 avatar: {type:String},
 avatarPublicId: {type: String},

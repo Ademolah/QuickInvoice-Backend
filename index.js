@@ -11,6 +11,8 @@ const reportsRoute = require('./routes/reports')
 const inventoryRoutes = require('./routes/inventoryRoutes')
 const clientPaymentsRoutes = require('./routes/clientsPayments')
 
+const verifyBvn = require('./routes/verifyBvn')
+
 const deliveryRoutes = require('./routes/deliveryRoutes')
 
 const cors = require('cors')
@@ -60,6 +62,7 @@ app.use('/api/auth', authRoutes);
 app.use('/api/invoices', invoiceRoutes);
 app.use("/api/clients", clientRoutes);
 app.use("/api/reports", reportsRoute)
+app.use('/api/bvn', verifyBvn)
 
 app.use('/api/deliveries', deliveryRoutes)
 
