@@ -13,10 +13,25 @@ const userSchema = new mongoose.Schema({
   accountName: { type: String }
 },// from Paystack
 
+transactionPin: {
+  type: String,
+  default: null
+},
+
 tokenVersion: { type: Number, default: 0 },
 //Avatar fields
 avatar: {type:String},
 avatarPublicId: {type: String},
+
+
+//Anchor details
+anchor: {
+  customerId: { type: String }, 
+  fullResponse: {type: Object},
+  account: {type: Object},
+  verified: {type: Boolean, default: false},
+  createdAt: {type: Date, default: Date.now}
+},
 
 
 plan: { type: String, enum: ["free", "pro"], default: "free" },

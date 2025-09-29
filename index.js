@@ -11,6 +11,15 @@ const reportsRoute = require('./routes/reports')
 const inventoryRoutes = require('./routes/inventoryRoutes')
 const clientPaymentsRoutes = require('./routes/clientsPayments')
 
+
+const transactionPin = require('./routes/transactionPin')
+const inboundTransaction = require('./QuickPay/routes/incomingTransactions')
+const transactionsRoute = require('./QuickPay/routes/transactions')
+
+
+//Anchor
+const anchorRoutes = require('./QuickPay/routes/anchor')
+
 const verifyBvn = require('./routes/verifyBvn')
 
 const deliveryRoutes = require('./routes/deliveryRoutes')
@@ -63,8 +72,15 @@ app.use('/api/invoices', invoiceRoutes);
 app.use("/api/clients", clientRoutes);
 app.use("/api/reports", reportsRoute)
 app.use('/api/bvn', verifyBvn)
+app.use('/api/transaction-pin', transactionPin)
 
 app.use('/api/deliveries', deliveryRoutes)
+
+
+//anchor routes
+app.use('/api/anchor', anchorRoutes)
+app.use('/api/anchorIncomingTransaction', inboundTransaction)
+app.use('/api/transactions', transactionsRoute)
 
 
 
