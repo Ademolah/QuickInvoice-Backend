@@ -39,7 +39,7 @@ connectDb()
 const allowedOrigins = [
   "https://www.quickinvoiceng.com",
   "https://quickinvoiceng.com", // ✅ no www version too
-  // "http://localhost:3000",
+  "http://localhost:3000",
   "https://quick-invoice-frontend-two.vercel.app",
   "https://test-quickinvoice-frontend.vercel.app",
   "https://www.test-quickinvoice-frontend.vercel.app"
@@ -79,7 +79,7 @@ app.use('/api/deliveries', deliveryRoutes)
 
 //anchor routes
 app.use('/api/anchor', anchorRoutes)
-app.use('/api/anchorIncomingTransaction', inboundTransaction)
+app.use('/api/IncomingTransaction', inboundTransaction)
 app.use('/api/transactions', transactionsRoute)
 
 

@@ -140,7 +140,8 @@ router.post("/transaction-webhook", verifyAnchorSignature, async (req, res) => {
       sessionId: sessionId || null,
       accountId: accountId,
       currency: currency || "NGN",
-      transactionReference: reference || null,
+      // transactionReference: reference || null,
+      transactionReference: reference || `${Date.now()}-${Math.floor(Math.random()) }`,
       transactionStatus:
         status === "COMPLETED" ? "COMPLETED" : "PENDING",
       accountBalance: availableBalance,

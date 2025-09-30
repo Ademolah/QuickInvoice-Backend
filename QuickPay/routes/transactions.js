@@ -42,6 +42,7 @@ router.post("/verifyPin", authMiddleware, async (req, res) => {
   }
 });
 
+
 // GET /api/banks
 router.get("/banks", async (req, res) => {
   try {
@@ -68,6 +69,41 @@ router.get("/banks", async (req, res) => {
   }
 });
 
+//verify account
+
+router.get("/verify-account", authMiddleware, async (req, res) => {
+  try {
+    const { bankCode, accountNumber } = req.query;
+    if (!bankCode || !accountNumber) {
+      return res.status(400).json({
+        message: "bankCode and accountNumber are required",
+      });
+    }
+    const url = `https://api.sandbox.getanchor.co/api/v1/payments/verify-account/${bankCode}/${accountNumber}`;
+    const apiResponse = await axios.get(url, {
+      headers: {
+        accept: "application/json",
+        "x-anchor-key": process.env.ANCHOR_API_KEY,
+      },
+    });
+    // ✅ Return only relevant info to frontend
+    return res.status(200).json({
+      success: true,
+      accountName: apiResponse.data?.data?.attributes?.accountName,
+      bank: apiResponse.data?.data?.attributes?.bank?.name,
+      accountNumber: apiResponse.data?.data?.attributes?.accountNumber,
+    });
+  } catch (error) {
+    console.error(
+      "Verify Account Error:",
+      error?.response?.data || error.message
+    );
+    return res.status(500).json({
+      message: "Error verifying account",
+      error: error?.response?.data || error.message,
+    });
+  }
+});
 
 router.get("/history", authMiddleware, async (req, res) => {
   try {
