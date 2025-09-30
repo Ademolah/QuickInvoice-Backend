@@ -71,9 +71,9 @@ router.get("/banks", async (req, res) => {
 
 //verify account
 
-router.get("/verify-account", authMiddleware, async (req, res) => {
+router.get("/verify-account/:bankCode/:accountNumber", authMiddleware, async (req, res) => {
   try {
-    const { bankCode, accountNumber } = req.query;
+    const { bankCode, accountNumber } = req.params;
     if (!bankCode || !accountNumber) {
       return res.status(400).json({
         message: "bankCode and accountNumber are required",

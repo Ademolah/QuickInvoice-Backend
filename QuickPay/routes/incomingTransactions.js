@@ -79,7 +79,7 @@ router.post("/transaction-webhook", verifyAnchorSignature, async (req, res) => {
     console.log("Incoming Webhook:", JSON.stringify(req.body, null, 2));
 
     const eventType = req.body?.data?.type;
-    if (eventType !== "nip.inbound.completed") {
+    if (eventType !== "nip.inbound.settled") {
       return res.status(200).json({ message: "Event ignored" });
     }
 
