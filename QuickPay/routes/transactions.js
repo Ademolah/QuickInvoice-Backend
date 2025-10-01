@@ -5,6 +5,7 @@ const bcrypt = require("bcrypt");
 const User = require("../../models/Users");
 const router = express.Router();
 const axios = require("axios");
+const crypto = require("crypto");
 
 
 router.post("/verifyPin", authMiddleware, async (req, res) => {
@@ -101,6 +102,107 @@ router.get("/verify-account/:bankCode/:accountNumber", authMiddleware, async (re
     return res.status(500).json({
       message: "Error verifying account",
       error: error?.response?.data || error.message,
+    });
+  }
+});
+
+
+router.post("/create-counterparty", authMiddleware, async (req, res) => {
+  try {
+    const { bankCode, accountName, accountNumber } = req.body;
+    const response = await axios.post(
+      "https://api.sandbox.getanchor.co/api/v1/counterparties",
+      {
+        data: {
+          type: "CounterParty",
+          attributes: {
+            bankCode,
+            accountName,
+            accountNumber,
+            verifyName: true
+          }
+        }
+      },
+      {
+        headers: {
+          "accept": "application/json",
+          "content-type": "application/json",
+          "x-anchor-key": process.env.ANCHOR_API_KEY
+        }
+      }
+    );
+    return res.status(200).json(response.data);
+  } catch (error) {
+    console.error(error?.response?.data || error);
+    return res.status(500).json({
+      message: "Failed to create counterparty",
+      error: error?.response?.data || error.message
+    });
+  }
+});
+
+router.post("/initiate-transfer", authMiddleware, async (req, res) => {
+  try {
+    const {
+      amount,
+      currency,
+      reason,
+      counterPartyId, // from previous creation
+      accountType = "DepositAccount",
+    } = req.body;
+
+
+    if(!counterPartyId){
+      return res.status(400).json({ message: "counterPartyId is required" });
+    }
+
+    const reference = crypto.randomBytes(10).toString("hex");
+
+    const accountId = req.user?.anchor?.account?.id
+    if(!accountId){
+      return res.status(400).json({ message: "User does not have a valid DepositAccount" });
+    }
+
+    const response = await axios.post(
+      "https://api.sandbox.getanchor.co/api/v1/transfers",
+      {
+        data: {
+          type: "NIPTransfer",
+          attributes: {
+            amount,
+            currency,
+            reason,
+            reference
+          },
+          relationships: {
+            account: {
+              data: {
+                id: accountId,
+                type: accountType
+              }
+            },
+            counterParty: {
+              data: {
+                id: counterPartyId,
+                type: "CounterParty"
+              }
+            }
+          }
+        }
+      },
+      {
+        headers: {
+          "Content-Type": "application/json",
+          "x-anchor-key": process.env.ANCHOR_API_KEY
+        }
+      }
+    );
+    return res.status(200).json(response.data);
+  } catch (error) {
+    console.error(error?.response?.data || error);
+    return res.status(500).json({
+      message: "Failed to initiate transfer",
+      error: error?.response?.data || error.message
     });
   }
 });
