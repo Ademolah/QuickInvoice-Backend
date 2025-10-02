@@ -1,7 +1,7 @@
 const nodemailer = require("nodemailer");
 
 
-const sendDebitEmail = async(amount,bankName, email,accountName, accountNumber, dateTime, transactionReference)=>{
+const sendDebitEmail = async(amount,bankName, email,accountName, name,accountNumber, dateTime, transactionReference,description)=>{
     
         
     
@@ -44,7 +44,7 @@ const sendDebitEmail = async(amount,bankName, email,accountName, accountNumber, 
     <tr>
       <td style="padding:30px;">
         <p style="font-size:16px; line-height:1.6; margin:0 0 16px;">
-          A debit transaction has occurred on your QuickPay account.
+          Hi ${name}, a debit transaction has occurred on your QuickPay account.
         </p>
         <table style="width:100%; border-collapse:collapse; margin-top:10px;">
           <tr>
@@ -62,6 +62,10 @@ const sendDebitEmail = async(amount,bankName, email,accountName, accountNumber, 
           <tr>
             <td style="padding:8px 0;"><strong>Account Number:</strong></td>
             <td style="padding:8px 0;">${accountNumber}</td>
+          </tr>
+          <tr>
+            <td style="padding:8px 0;"><strong>Description:</strong></td>
+            <td style="padding:8px 0;">${description}</td>
           </tr>
           <tr>
             <td style="padding:8px 0;"><strong>Reference:</strong></td>

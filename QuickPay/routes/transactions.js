@@ -345,10 +345,10 @@ router.post("/webhook/anchor-transfer", verifyAnchorSignature, async (req, res) 
           status === "COMPLETED" ? "COMPLETED" : "PENDING",
         accountBalance: availableBalance,
       });
-      
+
       console.log("✅ Transaction Document Created Successfully");
       try {
-        sendDebitAlert(amount, sourceBank?.name, user.email, sourceAccountName, sourceAccountNumber, new Date().toLocaleString(), reference )
+        sendDebitAlert(amount, sourceBank?.name, user.email, sourceAccountName, user.name, sourceAccountNumber, new Date().toLocaleString(), reference, description )
       } catch (error) {
         error("❌ Failed to send debit alert email:", error.message);
       }

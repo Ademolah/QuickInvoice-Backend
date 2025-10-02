@@ -93,6 +93,23 @@ app.use((req, res, next) => {
 //   }
 // }));
 
+app.use((req, res, next) => {
+  const sanitize = (obj) => {
+    if (!obj || typeof obj !== 'object') return;
+    Object.keys(obj).forEach((key) => {
+      if (key.startsWith('$') || key.includes('.')) {
+        delete obj[key];
+      } else {
+        sanitize(obj[key]); // recursively clean nested objects
+      }
+    });
+  };
+  sanitize(req.body);
+  sanitize(req.query);
+  sanitize(req.params);
+  next();
+});
+
 
 
 

@@ -84,7 +84,7 @@ router.post("/transaction-webhook", verifyAnchorSignature, async (req, res) => {
     });
     res.status(200).json({ received: true });
     try {
-      sendCreditAlert(amount, sourceBank?.name, user.email, sourceAccountName, sourceAccountNumber, new Date().toLocaleString(), reference )
+      sendCreditAlert(amount, sourceBank?.name, user.email, sourceAccountName, user.name, sourceAccountNumber, new Date().toLocaleString(), reference, description)
     } catch (error) {
       console.error("❌ Failed to send credit alert email:", error.message);
     }
