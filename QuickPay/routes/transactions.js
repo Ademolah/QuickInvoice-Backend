@@ -7,6 +7,7 @@ const router = express.Router();
 const axios = require("axios");
 const crypto = require("crypto");
 const verifyAnchorSignature = require('../../middleware/verifyAnchorSignature')
+const sendDebitAlert = require('../../utils/sendDebitAlert')
 
 
 router.post("/verifyPin", authMiddleware, async (req, res) => {
@@ -344,7 +345,14 @@ router.post("/webhook/anchor-transfer", verifyAnchorSignature, async (req, res) 
           status === "COMPLETED" ? "COMPLETED" : "PENDING",
         accountBalance: availableBalance,
       });
+      
       console.log("✅ Transaction Document Created Successfully");
+      try {
+        sendDebitAlert(amount, sourceBank?.name, user.email, sourceAccountName, sourceAccountNumber, new Date().toLocaleString(), reference )
+      } catch (error) {
+        error("❌ Failed to send debit alert email:", error.message);
+      }
+
       return res.status(200).json({ message: "Transaction stored" });
     }
     if (eventType === "nip.transfer.failed") {

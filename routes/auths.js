@@ -5,8 +5,18 @@ const User = require('../models/Users');
 const sendWelcomeEmail = require('../utils/sendWelcomeEmail')
 const Payments = require('../models/Payments')
 const axios = require("axios");
+const rateLimit = require("express-rate-limit");
 
 const router = express.Router();
+
+const authLimiter = rateLimit({
+    windowMs: 15 * 60 * 1000, // 15 minutes
+    max: 8, // limit each IP to 8 requests per window (login attempts)
+    message: { message: 'Too many login attempts. Try again later.' },
+    standardHeaders: true,
+    legacyHeaders: false,
+    // store: new RateLimitRedisStore({ sendCommand: (...args) => redisClient.call(...args) }) // optional
+  });
 
 // @desc    Register new user
 // @route   POST /api/auth/register
@@ -72,7 +82,7 @@ router.post("/register", async (req, res) => {
 
 // @desc    Login user
 // @route   POST /api/auth/login
-router.post("/login", async (req, res) => {
+router.post("/login", authLimiter, async (req, res) => {
   try {
     const { email, password } = req.body;
 
