@@ -231,8 +231,10 @@ router.get("/history", authMiddleware, async (req, res) => {
       .select({
         transactionType: 1,
         transactionAmount: 1,
+        transactionDescription: 1,
         transactionDetail: 1,
         accountBalance: 1,
+        transactionReference: 1,
         createdAt: 1,
       })
       .skip(skip)

@@ -22,6 +22,7 @@ const compression = require('compression');
 const mongoSanitize = require('express-mongo-sanitize');
 const hpp = require('hpp');
 const xss = require('xss-clean')
+const xssSanitize = require('./utils/xssSanitize')
 
 
 
@@ -85,13 +86,12 @@ app.use((req, res, next) => {
     next();
 });
 
-// app.use(xss())
-// app.use(mongoSanitize({
-//   onSanitize: ({req, key}) => {
-//     console.log(`This request[${key}] is sanitized`, req[key]);
-    
-//   }
-// }));
+app.use((req, res, next) => {
+  res.setHeader("X-Content-Type-Options", "nosniff");
+  next();
+});
+
+app.use(xssSanitize)
 
 app.use((req, res, next) => {
   const sanitize = (obj) => {
