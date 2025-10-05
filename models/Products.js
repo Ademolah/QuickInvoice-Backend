@@ -7,7 +7,7 @@ const productSchema = new mongoose.Schema(
     sku: { type: String, trim: true },               // optional
     price: { type: Number, required: true, min: 0 },
     stock: { type: Number, required: true, min: 0 }, // inventory count
-    category: {type: String, required: false, enum:["Phones","Laptops","Gadgets", "Fashion", "Medicine","Furniture", "Restaurant"]},
+    category: {type: String, required: false, enum:["Phones","Laptops","Gadgets", "Fashion", "Medicine","Furniture", "Restaurant","Stationery"]},
     // quantity: {type: Number, required: true},
     description: { type: String, trim: true },
     active: { type: Boolean, default: true },
