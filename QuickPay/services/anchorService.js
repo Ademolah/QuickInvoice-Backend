@@ -8,7 +8,7 @@ async function createVirtualAccount(user) {
     throw new Error("User not verified or not found");
   }
   const response = await axios.post(
-    "https://api.sandbox.getanchor.co/api/v1/accounts",
+    `${process.env.ANCHOR_BASEURL}/api/v1/accounts`,
     {
       data: {
         type: "DepositAccount",

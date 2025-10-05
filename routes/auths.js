@@ -55,7 +55,7 @@ router.post("/register", async (req, res) => {
     const token = jwt.sign(
       { id: newUser._id, email: newUser.email },
       process.env.JWT_SECRET,
-      { expiresIn: "30m" }
+      { expiresIn: "40m" }
     );
     
 
@@ -116,7 +116,7 @@ router.post("/login", authLimiter, async (req, res) => {
     const token = jwt.sign(
       { id: user._id, email: user.email, tokenVersion: user.tokenVersion },
       process.env.JWT_SECRET,
-      { expiresIn: "30" }
+      { expiresIn: "40m" }
     );
 
     console.log(`${user.name} just logged in` )

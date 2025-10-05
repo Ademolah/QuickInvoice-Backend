@@ -50,7 +50,7 @@ router.post("/verifyPin", authMiddleware, async (req, res) => {
 router.get("/banks", async (req, res) => {
   try {
     const response = await axios.get(
-      "https://api.sandbox.getanchor.co/api/v1/banks",
+      `${process.env.ANCHOR_BASEURL}/api/v1/banks`,
       {
         headers: {
           accept: "application/json",
@@ -82,7 +82,7 @@ router.get("/verify-account/:bankCode/:accountNumber", authMiddleware, async (re
         message: "bankCode and accountNumber are required",
       });
     }
-    const url = `https://api.sandbox.getanchor.co/api/v1/payments/verify-account/${bankCode}/${accountNumber}`;
+    const url = `${process.env.ANCHOR_BASEURL}/api/v1/payments/verify-account/${bankCode}/${accountNumber}`;
     const apiResponse = await axios.get(url, {
       headers: {
         accept: "application/json",
@@ -113,7 +113,7 @@ router.post("/create-counterparty", authMiddleware, async (req, res) => {
   try {
     const { bankCode, accountName, accountNumber } = req.body;
     const response = await axios.post(
-      "https://api.sandbox.getanchor.co/api/v1/counterparties",
+      `${process.env.ANCHOR_BASEURL}/api/v1/counterparties`,
       {
         data: {
           type: "CounterParty",
@@ -164,13 +164,17 @@ router.post("/initiate-transfer", authMiddleware, async (req, res) => {
 
     const user = await User.findById(userId)
 
+    // if(!user){
+    //   return res.status(400).json({ message: "User not found" });
+    // }
+
     const accountId = user?.anchor?.account?.id
     if(!accountId){
       return res.status(400).json({ message: "User does not have a valid DepositAccount" });
     }
 
     const response = await axios.post(
-      "https://api.sandbox.getanchor.co/api/v1/transfers",
+      `${process.env.ANCHOR_BASEURL}/api/v1/transfers`,
       {
         data: {
           type: "NIPTransfer",
@@ -284,7 +288,7 @@ router.post("/webhook/anchor-transfer", verifyAnchorSignature, async (req, res) 
         (item) => item.type === "DepositAccount"
       );
       if (!transferInfo || !counterPartyInfo || !accountInfo) {
-        console.error(":x: Missing included details in webhook payload");
+        console.error("Missing included details in webhook payload");
         return res.status(400).json({
           message: "Missing included details in webhook payload",
         });

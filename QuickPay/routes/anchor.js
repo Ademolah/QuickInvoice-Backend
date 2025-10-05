@@ -58,7 +58,7 @@ router.put("/create-customer", authMiddleware, async (req, res) => {
     };
     // Send to Anchor API
     const response = await axios.post(
-      "https://api.sandbox.getanchor.co/api/v1/customers",
+      `${process.env.ANCHOR_BASEURL}/api/v1/customers`,
       anchorPayload,
       {
         headers: {
@@ -126,7 +126,7 @@ router.post("/verify-customer/:id", authMiddleware, async (req, res) => {
       }
     };
     const response = await axios.post(
-      `https://api.sandbox.getanchor.co/api/v1/customers/${user.anchor.customerId}/verification/individual`,
+      `${process.env.ANCHOR_BASEURL}/api/v1/customers/${user.anchor.customerId}/verification/individual`,
       payload,
       {
         headers: {
@@ -252,7 +252,7 @@ router.get("/account/details", authMiddleware, async (req, res) => {
     }
     const accountId = user.anchor.account.id; // e.g. "169925847367121-anc_acc"
     const response = await axios.get(
-      `https://api.sandbox.getanchor.co/api/v1/accounts/${accountId}?include=AccountNumber`,
+      `${process.env.ANCHOR_BASEURL}/api/v1/accounts/${accountId}?include=AccountNumber`,
       {
         headers: {
           accept: "application/json",
