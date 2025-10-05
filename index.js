@@ -19,9 +19,7 @@ const slowDown = require('express-slow-down');
 const rateLimit = require('express-rate-limit');
 const cookieParser = require('cookie-parser');
 const compression = require('compression');
-const mongoSanitize = require('express-mongo-sanitize');
 const hpp = require('hpp');
-const xss = require('xss-clean')
 const xssSanitize = require('./utils/xssSanitize')
 
 
@@ -29,16 +27,13 @@ const xssSanitize = require('./utils/xssSanitize')
 const transactionPin = require('./routes/transactionPin')
 const inboundTransaction = require('./QuickPay/routes/incomingTransactions')
 const transactionsRoute = require('./QuickPay/routes/transactions')
-const secureApp = require('./middleware/security-middleware')
+
 
 
 //Anchor
 const anchorRoutes = require('./QuickPay/routes/anchor')
-
 const verifyBvn = require('./routes/verifyBvn')
-
 const deliveryRoutes = require('./routes/deliveryRoutes')
-
 const cors = require('cors')
 
 
@@ -47,7 +42,58 @@ const app = express()
 
 
 //SECURITY MIDDLEWARE
-app.use(helmet())
+// app.use(helmet())
+app.use(helmet({
+  contentSecurityPolicy: {
+    directives: {
+      defaultSrc: ["'self'"],
+      scriptSrc: ["'self'"],
+      styleSrc: ["'self'", "'unsafe-inline'"],
+      imgSrc: ["'self'", "data:", "https:"],
+      connectSrc: ["'self'", "https:"],
+      frameAncestors: ["'none'"], // Blocks clickjacking entirely
+      baseUri: ["'self'"],
+    },
+  },
+  referrerPolicy: { policy: "no-referrer" },
+  frameguard: { action: "deny" },
+}));
+
+app.use((req, res, next) => {
+  if (process.env.NODE_ENV === 'production' && req.headers['x-forwarded-proto'] !== 'https') {
+    return res.redirect(301, `https://${req.headers.host}${req.url}`);
+  }
+  next();
+});
+
+const badActors = new Map(); // ip => { count, blockedUntil }
+function blockIpTemporarily(ip, seconds = 300) {
+  badActors.set(ip, { blockedUntil: Date.now() + seconds * 1000 });
+  console.warn(`:warning: Blocking IP ${ip} for ${seconds}s`);
+}
+
+app.use((req, res, next) => {
+  const ip = req.ip || req.connection.remoteAddress;
+  const ua = req.get("user-agent") || "";
+  // Check if already blocked
+  const record = badActors.get(ip);
+  if (record?.blockedUntil > Date.now()) {
+    return res.status(403).json({ message: "Access temporarily denied" });
+  }
+
+
+if (!ua || /curl|wget|python|scraper|bot|crawl|libwww/i.test(ua)) {
+    const entry = badActors.get(ip) || { count: 0 };
+    entry.count++;
+    badActors.set(ip, entry);
+    if (entry.count > 50) {
+      blockIpTemporarily(ip, 600); // Block 10 minutes
+      return res.status(403).json({ message: "Blocked for suspicious activity" });
+    }
+  }
+  next();
+});
+
 app.set('trust proxy', 1);
 if (process.env.NODE_ENV !== 'production') {
     app.use(morgan('dev'));
@@ -68,6 +114,7 @@ const globalLimiter = rateLimit({
     message: { message: 'Too many requests from this IP, please try again later.' },
     // store: new RateLimitRedisStore({ sendCommand: (...args) => redisClient.call(...args) }) // optional
   });
+  
 app.use(globalLimiter);
 app.disable('x-powered-by');
 app.use(express.json({ limit: '100kb' }));

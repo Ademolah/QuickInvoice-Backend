@@ -11,7 +11,7 @@ const verifyAnchorSignature = require('../../middleware/verifyAnchorSignature')
 
 const router = express.Router();
 // Create Customer in Anchor
-router.post("/create-customer", authMiddleware, async (req, res) => {
+router.put("/create-customer", authMiddleware, async (req, res) => {
   try {
     const {
       firstName,
@@ -337,9 +337,9 @@ router.get("/check-customer", authMiddleware, async (req, res) => {
   try {
     const user = await User.findById(req.userId);
     if (user?.anchor?.customerId) {
-      return res.json({ anchorCustomerExists: true });
+      return res.json({ anchorCustomerExists: true , verified: user?.anchor?.verified === true});
     }
-    return res.json({ anchorCustomerExists: false });
+    return res.json({ anchorCustomerExists: false, verified: false});
   } catch (error) {
     console.error("Error checking anchor status:", error);
     return res.status(500).json({ message: "Server error" });

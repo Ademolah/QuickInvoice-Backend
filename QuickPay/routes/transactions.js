@@ -15,7 +15,7 @@ router.post("/verifyPin", authMiddleware, async (req, res) => {
     const { pin } = req.body;
     // Basic validation
     if (!pin) {
-      return res.status(400).json({ message: "PIN is required" });
+      return res.status(400).json({ message: "PIN is required, create PIN in 'Settings' " });
     }
 
     // Frontend might send a number; convert to string
@@ -234,6 +234,7 @@ router.get("/history", authMiddleware, async (req, res) => {
         transactionDescription: 1,
         transactionDetail: 1,
         accountBalance: 1,
+        transactionStatus: 1,
         transactionReference: 1,
         createdAt: 1,
       })
