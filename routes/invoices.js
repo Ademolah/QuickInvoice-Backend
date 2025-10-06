@@ -5,6 +5,7 @@ const User =  require('../models/Users')
 const PDFDocument = require('pdfkit');
 const InvoiceLog = require('../models/InvoiceLog')
 const checkUsage = require('../middleware/checkUsage')
+const Product = require('../models/Products')
 
 const router = express.Router();
 
@@ -54,17 +55,61 @@ router.get('/:id', auth, async (req, res) => {
   }
 });
 
+
+
+// // Mark paid
+// router.patch('/:id/pay', auth, async (req, res) => {
+//   try {
+//     const inv = await Invoice.findOneAndUpdate({ _id: req.params.id, userId: req.userId }, { status: 'paid' }, { new: true });
+//   if (!inv) return res.status(404).json({ message: 'Not found' });
+//   res.json(inv);
+//   } catch (e) {
+//     console.error(e);
+//     res.status(500).json({ message: 'Server error' });
+//   }
+// });
+
 // Mark paid
 router.patch('/:id/pay', auth, async (req, res) => {
   try {
-    const inv = await Invoice.findOneAndUpdate({ _id: req.params.id, userId: req.userId }, { status: 'paid' }, { new: true });
-  if (!inv) return res.status(404).json({ message: 'Not found' });
-  res.json(inv);
+    // 1. Find the invoice
+    const invoice = await Invoice.findOne({ _id: req.params.id, userId: req.userId });
+    if (!invoice) return res.status(404).json({ message: 'Not found' });
+
+    // 2. Load Product model
+
+    let lowStockWarnings = [];
+    // 3. Loop through invoice items and deduct from inventory
+    for (const item of invoice.items) {
+      const product = await Product.findOne({
+        userId: invoice.userId,
+        name: new RegExp(`^${item.description}$`, 'i')  // Match by name (case insensitive)
+      });
+
+      if (!product) {
+        // lowStockWarnings.push(`Product '${item.description}' not found in inventory`);
+        console.log("Product not found in inventory");
+        continue;
+      }
+
+      const newStock = (product.stock || 0) - item.quantity;
+      if (newStock < 5) {
+        lowStockWarnings.push(`Stock for '${item.description}' is now very low`);
+      }
+      product.stock = newStock;
+      await product.save();
+    }
+    // 4. Mark invoice as paid
+    invoice.status = 'paid';
+    await invoice.save();
+    res.json({ ...invoice.toObject(), lowStockWarnings });
   } catch (e) {
     console.error(e);
     res.status(500).json({ message: 'Server error' });
   }
 });
+
+
 
 // Delete
 router.delete('/:id', auth, async (req, res) => {
