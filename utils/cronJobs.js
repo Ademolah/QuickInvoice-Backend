@@ -19,16 +19,61 @@ function sendReminderEmail(user) {
     to: user.email,
     subject: "⏰ Your Pro plan expires soon",
     html: `
-      <h2>Hi ${user.name},</h2>
-      <p>Your <b>Pro subscription</b> for <b>${user.businessName}</b> will expire in <b>4 days</b>.</p>
-      <p>To avoid interruption, please renew your subscription today.</p>
-      <br/>
-      <a href="https://quickinvoiceng.com/billing" 
-         style="background:#0046A5; color:white; padding:10px 20px; text-decoration:none; border-radius:6px;">
-         Renew Now
-      </a>
-      <br/><br/>
-      <p>– The QuickInvoice NG Team</p>
+      <!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8" />
+  <title>Subscription Reminder</title>
+</head>
+<body style="margin:0; padding:0; background-color:#F9FAFB; font-family:Inter, Arial, sans-serif; color:#4B5563;">
+  <table align="center" width="100%" cellpadding="0" cellspacing="0" style="max-width:600px; background:#FFFFFF; border-radius:12px; box-shadow:0 4px 12px rgba(0,0,0,0.05); overflow:hidden;">
+    <!-- Header -->
+    <tr>
+      <td align="center" style="background:linear-gradient(90deg,#0046A5,#00B86B); padding:20px;">
+        <h1 style="margin:0; font-family:Poppins, Arial, sans-serif; font-size:24px; color:#FFFFFF;">QuickInvoice NG</h1>
+      </td>
+    </tr>
+    <!-- Body -->
+    <tr>
+      <td style="padding:30px;">
+        <h2 style="font-family:Poppins, Arial, sans-serif; font-size:22px; margin:0; color:#0046A5;">
+          Subscription Expiring Soon :hourglass_flowing_sand:
+        </h2>
+        <p style="margin:16px 0; font-size:16px; line-height:1.6;">
+          Hi <strong>${user.name}</strong>,
+        </p>
+        <p style="margin:0 0 16px 0; font-size:16px; line-height:1.6;">
+          Your <strong>Pro subscription</strong> for <strong>${user.businessName}</strong> will expire in <strong>4 days</strong>.
+        </p>
+        <p style="margin:0 0 20px 0; font-size:16px; line-height:1.6;">
+          To avoid any interruption in your access to premium features, please renew your subscription today.
+        </p>
+        <div style="text-align:center; margin:30px 0;">
+          <a href="https://quickinvoiceng.com/billing"
+             style="display:inline-block; padding:12px 24px; background:#00B86B; color:#FFFFFF; text-decoration:none; border-radius:8px; font-size:16px; font-weight:600;">
+             Renew Now
+          </a>
+        </div>
+        <p style="margin:20px 0 0 0; font-size:15px; color:#6B7280;">
+          Thank you for choosing QuickInvoice NG — helping businesses grow smarter every day.
+        </p>
+        <p style="margin-top:8px; font-size:15px; color:#6B7280;">
+          Warm regards,<br/>
+          <strong>The QuickInvoice NG Team</strong>
+        </p>
+      </td>
+    </tr>
+    <!-- Footer -->
+    <tr>
+      <td align="center" style="padding:20px; font-size:13px; color:#6B7280; background:#F9FAFB;">
+        © 2025 QuickInvoice NG. All rights reserved. <br/>
+        <a href="https://quickinvoiceng.com/privacy" style="color:#0046A5; text-decoration:none;">Privacy Policy</a> •
+        <a href="https://quickinvoiceng.com/terms" style="color:#0046A5; text-decoration:none;">Terms of Use</a>
+      </td>
+    </tr>
+  </table>
+</body>
+</html>
     `,
   };
 
