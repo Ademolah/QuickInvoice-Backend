@@ -117,7 +117,7 @@ const buildEmail = (user, chartUrl, stats) => `
  * Main monthly summary job
  */
 const sendMonthlySummary = async () => {
-  const users = await User.find({email: "mackelvinn@gmail.com"});
+  const users = await User.find({});
   
 
     const now = new Date();
