@@ -142,7 +142,7 @@ const sendMonthlySummary = async () => {
     await transporter.sendMail({
       from: '"QuickInvoice NG" <hi@quickinvoiceng.com>',
       to: user.email,
-      subject: `📊 Monthly Summary Report — ${new Date().toLocaleString("default", { month: "long" })}`,
+      subject: `📊 Monthly Summary Report — ${new Date(new Date().setMonth(new Date().getMonth() - 1)).toLocaleString("default", { month: "long" })}`,
       html: buildEmail(user, chartUrl, { total, paid, unpaid, revenue }),
     });
     console.log(`✅ Summary email sent to ${user.email}`);
