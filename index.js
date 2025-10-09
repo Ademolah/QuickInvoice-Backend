@@ -1,5 +1,6 @@
 require('dotenv').config()
 require('./utils/cronJobs')
+require('./utils/reportSummary')
 const express = require('express')
 const connectDb = require('./db/db')
 const authRoutes = require('./routes/auths')
@@ -10,6 +11,9 @@ const paymentRoute = require('./routes/payment')
 const reportsRoute = require('./routes/reports')
 const inventoryRoutes = require('./routes/inventoryRoutes')
 const clientPaymentsRoutes = require('./routes/clientsPayments')
+
+
+const report = require('./routes/admin')
 
 
 //SECURITY
@@ -213,7 +217,6 @@ app.use('/api/deliveries', deliveryRoutes)
 app.use('/api/anchor', anchorRoutes)
 app.use('/api/IncomingTransaction', inboundTransaction)
 app.use('/api/transactions', transactionsRoute)
-
 
 
 
