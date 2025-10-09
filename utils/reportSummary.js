@@ -87,7 +87,10 @@ const buildEmail = (user, chartUrl, stats) => `
         <h2 style="font-family:Poppins, Arial, sans-serif; font-size:22px; margin:0; color:#0046A5;">Monthly Report Summary</h2>
         <p style="margin:16px 0; font-size:16px; line-height:1.6;">
           Hi <strong>${user.name}</strong>,<br/>
-          Here’s your performance summary for <b>${new Date().toLocaleString("default", { month: "long" })}</b>:
+          Here’s your performance summary for <b>${
+  new Date(new Date().setMonth(new Date().getMonth() - 1))
+    .toLocaleString("default", { month: "long" })
+}</b>:
         </p>
         <ul style="list-style:none; padding:0; font-size:15px; margin:20px 0;">
           <li>🧾 Total Invoices Issued: <b>${stats.total}</b></li>
