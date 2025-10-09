@@ -14,6 +14,7 @@ mongoose.connect(process.env.MONGO_URI, {
 
 
 
+
 // Configure transporter (Resend SMTP)
 const transporter = nodemailer.createTransport({
   host: "smtp.resend.com",
@@ -25,7 +26,6 @@ const transporter = nodemailer.createTransport({
   },
 });
 
-console.log("RESEND_API_KEY: ", process.env.RESEND_API_KEY ? "Loaded" : "Missing");
 
 /**
  * Generate QuickChart URL dynamically (no canvas needed)
@@ -117,12 +117,19 @@ const buildEmail = (user, chartUrl, stats) => `
  * Main monthly summary job
  */
 const sendMonthlySummary = async () => {
-  const users = await User.find({});
-  for (const user of users) {
+  const users = await User.find({email: "mackelvinn@gmail.com"});
+  
+
+    const now = new Date();
+    const startOfPrevMonth = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+    const endOfPrevMonth = new Date(now.getFullYear(), now.getMonth(), 0, 23, 59, 59);
+
+    for (const user of users) {
     const invoices = await Invoice.find({
       userId: user._id,
-      createdAt: { $gte: new Date(new Date().setDate(1)) },
+      createdAt: { $gte: startOfPrevMonth, $lte: endOfPrevMonth },
     });
+    
     const total = invoices.length;
     const paid = invoices.filter((i) => i.status === "paid").length;
     const revenue = invoices.reduce((sum, i) => sum + (i.total || 0), 0);
