@@ -104,6 +104,10 @@ router.post("/login", authLimiter, async (req, res) => {
       return res.status(400).json({ message: "Invalid credentials" });
     }
 
+    if(user.isFrozen){
+      return res.status(403).json({ message: "Account is frozen. Contact support." });
+    }
+
     // Create JWT token
     // const token = jwt.sign(
     //   { id: user._id, email: user.email },

@@ -21,6 +21,8 @@ residential_address: { type: String, default: null },
 occupation: { type: String, default: null },
 valid_ID: { type: String, default: null }, // could be driver's license, national ID, passport etc.
 
+isFrozen: { type: Boolean, default: false },
+
 transactionPin: {
   type: String,
   default: null
