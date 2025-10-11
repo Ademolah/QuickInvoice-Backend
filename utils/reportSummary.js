@@ -26,6 +26,8 @@ const transporter = nodemailer.createTransport({
   },
 });
 
+// console.log(process.env.RESEND_API_KEY);
+
 
 /**
  * Generate QuickChart URL dynamically (no canvas needed)
