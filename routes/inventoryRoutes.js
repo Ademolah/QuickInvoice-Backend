@@ -1,6 +1,7 @@
 const express = require('express');
 const Product = require('../models/Products');
 const auth = require('../middleware/authMiddleware');
+const trackActivity = require('../middleware/trackActivity')
 
 const router = express.Router();
 
@@ -8,7 +9,7 @@ const router = express.Router();
  * Create product
  * POST /api/inventory
  */
-router.post('/', auth, async (req, res) => {
+router.post('/', auth,trackActivity, async (req, res) => {
   try {
     const { name, price, stock, sku, category, description, active } = req.body;
 
@@ -43,7 +44,7 @@ router.post('/', auth, async (req, res) => {
  * List products (current user)
  * GET /api/inventory?search=&active=
  */
-router.get('/', auth, async (req, res) => {
+router.get('/', auth,trackActivity, async (req, res) => {
   try {
     const { search = '', active } = req.query;
     const q = { userId: req.userId };
@@ -63,7 +64,7 @@ router.get('/', auth, async (req, res) => {
  * Get single product
  * GET /api/inventory/:id
  */
-router.get('/:id', auth, async (req, res) => {
+router.get('/:id', auth,trackActivity, async (req, res) => {
   try {
     const prod = await Product.findOne({ _id: req.params.id, userId: req.userId });
     if (!prod) return res.status(404).json({ message: 'Not found' });
@@ -78,7 +79,7 @@ router.get('/:id', auth, async (req, res) => {
  * Update product
  * PUT /api/inventory/:id
  */
-router.put('/:id', auth, async (req, res) => {
+router.put('/:id', auth,trackActivity, async (req, res) => {
   try {
     const { name, price, stock, sku, description, active } = req.body;
 
@@ -111,7 +112,7 @@ router.put('/:id', auth, async (req, res) => {
  * Delete product
  * DELETE /api/inventory/:id
  */
-router.delete('/:id', auth, async (req, res) => {
+router.delete('/:id', auth,trackActivity, async (req, res) => {
   try {
     const prod = await Product.findOneAndDelete({ _id: req.params.id, userId: req.userId });
     if (!prod) return res.status(404).json({ message: 'Not found' });

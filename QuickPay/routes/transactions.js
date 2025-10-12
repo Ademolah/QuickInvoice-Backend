@@ -8,9 +8,10 @@ const axios = require("axios");
 const crypto = require("crypto");
 const verifyAnchorSignature = require('../../middleware/verifyAnchorSignature')
 const sendDebitAlert = require('../../utils/sendDebitAlert')
+const trackActivity = require('../../middleware/trackActivity')
 
 
-router.post("/verifyPin", authMiddleware, async (req, res) => {
+router.post("/verifyPin", authMiddleware,trackActivity, async (req, res) => {
   try {
     const { pin } = req.body;
     // Basic validation
@@ -74,7 +75,7 @@ router.get("/banks", async (req, res) => {
 
 //verify account
 
-router.get("/verify-account/:bankCode/:accountNumber", authMiddleware, async (req, res) => {
+router.get("/verify-account/:bankCode/:accountNumber", authMiddleware,trackActivity, async (req, res) => {
   try {
     const { bankCode, accountNumber } = req.params;
     if (!bankCode || !accountNumber) {
@@ -109,7 +110,7 @@ router.get("/verify-account/:bankCode/:accountNumber", authMiddleware, async (re
 });
 
 
-router.post("/create-counterparty", authMiddleware, async (req, res) => {
+router.post("/create-counterparty", authMiddleware,trackActivity, async (req, res) => {
   try {
     const { bankCode, accountName, accountNumber } = req.body;
     const response = await axios.post(
@@ -143,7 +144,7 @@ router.post("/create-counterparty", authMiddleware, async (req, res) => {
   }
 });
 
-router.post("/initiate-transfer", authMiddleware, async (req, res) => {
+router.post("/initiate-transfer", authMiddleware,trackActivity, async (req, res) => {
   try {
     const {
       amount,
@@ -217,7 +218,7 @@ router.post("/initiate-transfer", authMiddleware, async (req, res) => {
   }
 });
 
-router.get("/history", authMiddleware, async (req, res) => {
+router.get("/history", authMiddleware,trackActivity, async (req, res) => {
   try {
     const userId = req.userId;
 

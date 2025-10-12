@@ -74,12 +74,13 @@
 const express = require('express')
 const getReports  = require("../controllers/reportsController")
 const auth = require("../middleware/authMiddleware")
+const trackActivity = require('../middleware/trackActivity')
 
 const router = express.Router();
 
 
 
-router.get('/', auth, getReports)
+router.get('/', auth,trackActivity, getReports)
 
 
 

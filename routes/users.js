@@ -7,12 +7,13 @@ const axios = require('axios')
 const asyncHandler = require('express-async-handler')
 const upload = require('../middleware/upload')
 const cloudinary = require('../utils/cloudinary')
+const trackActivity = require('../middleware/trackActivity')
 
 
 const router = express.Router();
 
 // Get current logged-in user info
-router.get('/me', auth, async (req, res) => {
+router.get('/me', auth,trackActivity, async (req, res) => {
   try {
     // const user = await User.findById(req.user.id).select('businessName email');
     const user = await User.findById(req.user.id)
@@ -25,7 +26,7 @@ router.get('/me', auth, async (req, res) => {
 });
 
 // In your userRoutes.js or wherever your routes are defined
-router.get("/account-details", auth, async (req, res) => {
+router.get("/account-details", auth,trackActivity, async (req, res) => {
   try {
     const userId = req.user.id; // Assuming you have auth middleware
     const user = await User.findById(userId).select("accountDetails");
@@ -80,7 +81,7 @@ router.get("/verify/:reference", auth, async (req, res) => {
   }
 });
 
-router.post('/avatar',auth, upload.single('image'),asyncHandler(async (req, res) => {
+router.post('/avatar',auth,trackActivity, upload.single('image'),asyncHandler(async (req, res) => {
     if (!req.file) {
       return res.status(400).json({ message: 'No image file provided' });
     }
@@ -130,7 +131,7 @@ router.post('/avatar',auth, upload.single('image'),asyncHandler(async (req, res)
   })
 );
 
-router.put("/complete-profile" , auth, async (req, res)  => {
+router.put("/complete-profile" , auth,trackActivity, async (req, res)  => {
   try {
     // const userId = req.params.id;
     const userId = req.userId
@@ -164,7 +165,7 @@ router.put("/complete-profile" , auth, async (req, res)  => {
 
 
 
-router.put('/account-details', auth, updateAccountDetails);
-router.put('/change-password', auth, changePassword);
+router.put('/account-details', auth,trackActivity, updateAccountDetails);
+router.put('/change-password', auth,trackActivity, changePassword);
 
 module.exports = router;

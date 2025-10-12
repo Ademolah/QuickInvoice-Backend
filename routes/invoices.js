@@ -6,11 +6,12 @@ const PDFDocument = require('pdfkit');
 const InvoiceLog = require('../models/InvoiceLog')
 const checkUsage = require('../middleware/checkUsage')
 const Product = require('../models/Products')
+const trackActivity = require('../middleware/trackActivity')
 
 const router = express.Router();
 
 // Create invoice
-router.post('/', auth, async (req, res) => {
+router.post('/', auth,trackActivity, async (req, res) => {
   try {
     const { clientName, clientEmail, clientPhone, items = [], tax = 0, discount = 0, dueDate, notes } = req.body;
     if (!clientName || !items.length) return res.status(400).json({ message: 'Client and items required' });
@@ -33,7 +34,7 @@ router.post('/', auth, async (req, res) => {
 });
 
 // List invoices for user
-router.get('/', auth, async (req, res) => {
+router.get('/', auth,trackActivity, async (req, res) => {
   try {
     const list = await Invoice.find({ userId: req.userId }).sort({ createdAt: -1 });
   res.json(list);
@@ -44,7 +45,7 @@ router.get('/', auth, async (req, res) => {
 });
 
 // Get one
-router.get('/:id', auth, async (req, res) => {
+router.get('/:id', auth,trackActivity, async (req, res) => {
   try {
     const inv = await Invoice.findOne({ _id: req.params.id, userId: req.userId });
   if (!inv) return res.status(404).json({ message: 'Not found' });
@@ -70,7 +71,7 @@ router.get('/:id', auth, async (req, res) => {
 // });
 
 // Mark paid
-router.patch('/:id/pay', auth, async (req, res) => {
+router.patch('/:id/pay', auth,trackActivity, async (req, res) => {
   try {
     // 1. Find the invoice
     const invoice = await Invoice.findOne({ _id: req.params.id, userId: req.userId });
@@ -112,7 +113,7 @@ router.patch('/:id/pay', auth, async (req, res) => {
 
 
 // Delete
-router.delete('/:id', auth, async (req, res) => {
+router.delete('/:id', auth,trackActivity, async (req, res) => {
   try {
     const inv = await Invoice.findOneAndDelete({ _id: req.params.id, userId: req.userId });
   if (!inv) return res.status(404).json({ message: 'Not found' });
@@ -124,7 +125,7 @@ router.delete('/:id', auth, async (req, res) => {
 });
 
 // Update invoice
-router.put('/:id', auth, async (req, res) => {
+router.put('/:id', auth,trackActivity, async (req, res) => {
   try {
     const { clientName, clientEmail, clientPhone, items = [], tax = 0, discount = 0, dueDate, notes, status } = req.body;
     if (!clientName || !items.length) return res.status(400).json({ message: 'Client and items required' });
@@ -158,7 +159,7 @@ router.put('/:id', auth, async (req, res) => {
   }
 });
 
-router.get('/:id/pdf', auth, async (req, res) => {
+router.get('/:id/pdf', auth,trackActivity, async (req, res) => {
   try {
     const invoice = await Invoice.findOne({ _id: req.params.id, userId: req.userId });
     if (!invoice) return res.status(404).json({ message: 'Invoice not found' });
@@ -244,7 +245,7 @@ router.get('/:id/pdf', auth, async (req, res) => {
 // });
 
 // backend/routes/invoices.js (or wherever your log route is)
-router.post("/log", auth, checkUsage, async (req, res) => {
+router.post("/log", auth, checkUsage,trackActivity, async (req, res) => {
   try {
     const { type } = req.body;
     const userId = req.user.id; // assuming auth middleware

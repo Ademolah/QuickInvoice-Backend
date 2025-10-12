@@ -5,13 +5,14 @@ const axios = require("axios");
 const User = require('../../models/Users')
 const authMiddleware = require('../../middleware/authMiddleware')
 const {createVirtualAccount} = require('../services/anchorService')
+const trackActivity = require('../../middleware/trackActivity')
 
 
 const verifyAnchorSignature = require('../../middleware/verifyAnchorSignature')
 
 const router = express.Router();
 // Create Customer in Anchor
-router.put("/create-customer", authMiddleware, async (req, res) => {
+router.put("/create-customer", authMiddleware,trackActivity, async (req, res) => {
   try {
     const {
       firstName,
@@ -56,6 +57,13 @@ router.put("/create-customer", authMiddleware, async (req, res) => {
         },
       },
     };
+
+    const userId = req.userId;
+
+    await User.findByIdAndUpdate(userId, {$set: {"bvn": bvn}})
+
+    
+
     // Send to Anchor API
     const response = await axios.post(
       `${process.env.ANCHOR_BASEURL}/api/v1/customers`,
@@ -75,7 +83,7 @@ router.put("/create-customer", authMiddleware, async (req, res) => {
     const anchorId = response.data?.data?.id;
 
     //save anchor details to user
-    const userId = req.userId;
+    
     await User.findByIdAndUpdate(userId, {
         $set: {
             "anchor.customerId": anchorId,
@@ -83,6 +91,8 @@ router.put("/create-customer", authMiddleware, async (req, res) => {
             "anchor.createdAt": new Date()   
         }
     })
+
+    
 
     return res.status(201).json({
       success: true,
@@ -102,7 +112,7 @@ router.put("/create-customer", authMiddleware, async (req, res) => {
 
 
 // POST /api/anchor/verify-customer/:id
-router.post("/verify-customer/:id", authMiddleware, async (req, res) => {
+router.post("/verify-customer/:id", authMiddleware,trackActivity, async (req, res) => {
   try {
     const userId = req.userId; // userId from params
     const user = await User.findById(userId);
@@ -200,7 +210,7 @@ router.post("/verify-customer/:id", authMiddleware, async (req, res) => {
 
 
 //Manual
-router.post("/manual-create-account/:userId", authMiddleware, async (req, res) => {
+router.post("/manual-create-account/:userId", authMiddleware,trackActivity, async (req, res) => {
   try {
     const userId = req.userId
     const user = await User.findById(userId);
@@ -220,7 +230,7 @@ router.post("/manual-create-account/:userId", authMiddleware, async (req, res) =
 
 
 // Create Virtual Account (existing endpoint)
-router.post("/create-account/:userId", authMiddleware, async (req, res) => {
+router.post("/create-account/:userId", authMiddleware,trackActivity, async (req, res) => {
   try {
     const user = await User.findById(req.userId); // middleware sets this
     const account = await createVirtualAccount(user);
@@ -235,7 +245,7 @@ router.post("/create-account/:userId", authMiddleware, async (req, res) => {
 });
 
 
-router.get("/account/details", authMiddleware, async (req, res) => {
+router.get("/account/details", authMiddleware,trackActivity, async (req, res) => {
   try {
     // Get the current user
     const user = await User.findById(req.userId);
@@ -333,7 +343,7 @@ router.post("/webhook", verifyAnchorSignature, async (req, res) => {
 });
 
 
-router.get("/check-customer", authMiddleware, async (req, res) => {
+router.get("/check-customer", authMiddleware,trackActivity, async (req, res) => {
   try {
     const user = await User.findById(req.userId);
     if (user?.anchor?.customerId) {

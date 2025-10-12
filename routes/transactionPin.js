@@ -3,6 +3,7 @@ const bcrypt = require("bcryptjs");
 const authMiddleware = require("../middleware/authMiddleware");
 const User = require("../models/Users");
 const router = express.Router();
+const trackActivity = require('../middleware/trackActivity')
 
 
 
@@ -10,7 +11,7 @@ const router = express.Router();
 
 
 
-router.post("/set-transaction-pin", authMiddleware, async (req, res) => {
+router.post("/set-transaction-pin", authMiddleware,trackActivity, async (req, res) => {
   try {
     const { pin } = req.body;
     if (!pin || pin.length !== 4 || !/^\d{4}$/.test(pin)) {
@@ -32,7 +33,7 @@ router.post("/set-transaction-pin", authMiddleware, async (req, res) => {
 
 
 
-router.put("/update-transaction-pin", authMiddleware, async (req, res) => {
+router.put("/update-transaction-pin", authMiddleware,trackActivity, async (req, res) => {
   try {
     const { oldPin, newPin } = req.body;
 
