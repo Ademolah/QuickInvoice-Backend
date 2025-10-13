@@ -3,7 +3,7 @@ const User = require('../models/Users');
 // Middleware to track user activity
 const trackActivity = async (req, res, next) => {
   try {
-    console.log("Track activity middlrware reached ", req.method, req.originalUrl);
+    // console.log("Track activity middlrware reached ", req.method, req.originalUrl);
     
     const userId = req.userId; // assuming req.user is set from auth middleware
     const user = await User.findById(userId)
@@ -48,7 +48,7 @@ const trackActivity = async (req, res, next) => {
       }
     }
     // Track endpoint hit
-    console.log('Endpoint hit...');
+    // console.log('Endpoint hit...');
     
     await Log.create({
       message: `User ${user.email} accessed ${endpoint}`,
@@ -61,7 +61,7 @@ const trackActivity = async (req, res, next) => {
       }
     });
     next();
-    console.log("End of track activity middleware...");
+    // console.log("End of track activity middleware...");
     
   } catch (err) {
     console.error('Activity log error', err);
