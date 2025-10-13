@@ -7,6 +7,7 @@ const authMiddleware = require('../../middleware/authMiddleware')
 const {createVirtualAccount} = require('../services/anchorService')
 const trackActivity = require('../../middleware/trackActivity')
 
+const verifyBVN = require('../services/dojahServiceBVN')
 
 const verifyAnchorSignature = require('../../middleware/verifyAnchorSignature')
 
@@ -28,6 +29,13 @@ router.put("/create-customer", authMiddleware,trackActivity, async (req, res) =>
       gender,
       bvn
     } = req.body;
+
+
+    // const result = await verifyBVN(bvn, firstName, lastName, dateOfBirth)
+    // if(result.status !== 200){
+    //   return res.status(403).json({message: "Invalid BVN"})
+    // }
+
     // Build Anchor payload
     const anchorPayload = {
       data: {
