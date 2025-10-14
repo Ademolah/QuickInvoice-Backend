@@ -15,11 +15,11 @@ const userSchema = new mongoose.Schema({
 
 //KYC DETAILS
 bvn: { type: String, unique: true,  default: null },
-nationality: { type: String, default: null },
+nationality: { type: String, default: null,  },
 date_of_birth: { type: Date, default: null },
 residential_address: { type: String, default: null },
 occupation: { type: String, default: null },
-valid_ID: { type: String, default: null }, // could be driver's license, national ID, passport etc.
+valid_NIN: { type: String, default: null }, // could be driver's license, national ID, passport etc.
 
 isFrozen: { type: Boolean, default: false },
 
