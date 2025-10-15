@@ -8,6 +8,7 @@ const asyncHandler = require('express-async-handler')
 const upload = require('../middleware/upload')
 const cloudinary = require('../utils/cloudinary')
 const trackActivity = require('../middleware/trackActivity')
+const Transactions = require('../models/Transactions')
 
 
 const router = express.Router();
@@ -162,6 +163,75 @@ router.put("/complete-profile" , auth,trackActivity, async (req, res)  => {
     res.status(500).json({ message: "Server error, please try again later." });
   }
 });
+
+
+router.post("/verify-nin", auth,trackActivity, async (req, res) => {
+  try {
+    const { nin } = req.body;
+    if (!nin) {
+      return res.status(400).json({ message: "NIN is required" });
+    }
+    // Get the current logged-in user
+    const userId = req.userId
+    const user = await User.findById(userId);
+    if (!user) return res.status(404).json({ message: "User not found" });
+    
+    // Call Dojah API
+    const response = await axios.get(
+      `${process.env.DOJAH_BASE_URL_TEST}/api/v1/kyc/nin/advance`,
+      {
+        headers: {
+          AppId: process.env.DOJAH_APP_ID,
+          Authorization: process.env.DOJAH_SECRET_KEY,
+        },
+        params: {
+          nin,
+        },
+      }
+    );
+    const entity = response.data?.entity;
+    if (!entity) {
+      return res.status(500).json({ message: "Invalid response from verification provider" });
+    }
+
+    // Compare names (case-insensitive)
+    const matchesFirstName =
+      entity.first_name?.toLowerCase() === user.first_name?.toLowerCase();
+    const matchesLastName =
+      entity.last_name?.toLowerCase() === user.last_name?.toLowerCase();
+    if (!matchesFirstName && !matchesLastName) {
+      return res.status(400).json({ message: "Invalid NIN - Name mismatch", data: entity });
+    }
+    // ✅ Save to DB
+    user.valid_NIN = nin;
+    await user.save();
+    return res.status(200).json({ success: true, message: "NIN verified successfully" });
+  } catch (error) {
+    console.error("NIN verification error:", error.response?.data || error.message);
+    return res.status(error.response?.status || 500).json({
+      message: "NIN verification failed",
+      error: error.response?.data || null,
+    });
+  }
+});
+
+router.get("/fetchTransactions", auth, async (req, res) => {
+  try {
+    const userId = req.userId; // Provided by your middleware
+    // Option 1: Count only
+    const transactionCount = await Transactions.countDocuments({ user: userId });
+
+    // Option 2: Get transaction list
+    // const transactions = await Transactions.find({ user: userId }).sort({ createdAt: -1 });
+    return res.status(200).json({
+      count: transactionCount
+    });
+  } catch (error) {
+    console.error("Error fetching user transactions:", error);
+    return res.status(500).json({ message: "Server error" });
+  }
+});
+module.exports = router;
 
 
 

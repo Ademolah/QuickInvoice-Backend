@@ -13,6 +13,8 @@ const inventoryRoutes = require('./routes/inventoryRoutes')
 const clientPaymentsRoutes = require('./routes/clientsPayments')
 
 
+
+
 const report = require('./routes/admin')
 
 
@@ -175,7 +177,7 @@ connectDb()
 const allowedOrigins = [
   "https://www.quickinvoiceng.com",
   "https://quickinvoiceng.com", // ✅ no www version too
-  "http://localhost:3000",
+  "http://localhost:3001",
   "https://quick-invoice-frontend-two.vercel.app",
   "https://test-quickinvoice-frontend.vercel.app",
   "https://www.test-quickinvoice-frontend.vercel.app"
@@ -217,6 +219,7 @@ app.use('/api/deliveries', deliveryRoutes)
 app.use('/api/anchor', anchorRoutes)
 app.use('/api/IncomingTransaction', inboundTransaction)
 app.use('/api/transactions', transactionsRoute)
+
 
 
 

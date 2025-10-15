@@ -1,6 +1,8 @@
 const axios = require('axios')
 
 
+
+
 async function verifyBVN(bvn, first_name, last_name, dob) {
   try {
     if (!bvn) {
@@ -34,4 +36,6 @@ async function verifyBVN(bvn, first_name, last_name, dob) {
 }
 
 
-module.exports = { verifyBVN };
+
+
+module.exports = { verifyBVN};

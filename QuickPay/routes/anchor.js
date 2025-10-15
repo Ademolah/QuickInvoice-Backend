@@ -31,10 +31,13 @@ router.put("/create-customer", authMiddleware,trackActivity, async (req, res) =>
     } = req.body;
 
 
-    // const result = await verifyBVN(bvn, firstName, lastName, dateOfBirth)
-    // if(result.status !== 200){
-    //   return res.status(403).json({message: "Invalid BVN"})
-    // }
+    const result = await verifyBVN(bvn, firstName, lastName, dateOfBirth)
+    if(result.status !== 200){
+      return res.status(403).json({message: "Invalid BVN"})
+    }
+
+    console.log("Bvn checked");
+    
 
     // Build Anchor payload
     const anchorPayload = {
@@ -68,7 +71,10 @@ router.put("/create-customer", authMiddleware,trackActivity, async (req, res) =>
 
     const userId = req.userId;
 
-    await User.findByIdAndUpdate(userId, {$set: {"bvn": bvn}})
+    // update kyc details
+    await User.findByIdAndUpdate(userId, {$set: 
+      {"bvn": bvn, "first_name": firstName, "last_name": lastName},
+    })
 
     
 

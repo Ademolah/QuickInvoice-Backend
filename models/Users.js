@@ -14,9 +14,11 @@ const userSchema = new mongoose.Schema({
 },// from Paystack
 
 //KYC DETAILS
+first_name: {type: String, default: null},
+last_name: {type: String, default: null},
 bvn: { type: String, unique: true,  default: null },
 nationality: { type: String, default: null,  },
-date_of_birth: { type: Date, default: null },
+date_of_birth: { type: String, default: null },
 residential_address: { type: String, default: null },
 occupation: { type: String, default: null },
 valid_NIN: { type: String, default: null }, // could be driver's license, national ID, passport etc.
