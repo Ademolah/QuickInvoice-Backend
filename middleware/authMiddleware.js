@@ -55,8 +55,11 @@ const protect = async (req, res, next) => {
 
 
     //compare tokenVersion
-    if(decoded.tokenVersion !== user.tokenVersion){
-      return res.status(401).json({message: "Session expired, please log in again"})
+    // if(decoded.tokenVersion !== user.tokenVersion){
+    //   return res.status(401).json({message: "Session expired, please log in again"})
+    // }
+    if ((decoded.tokenVersion || 0) !== (user.tokenVersion || 0)) {
+      return res.status(401).json({ message: "Session expired, please log in again" });
     }
 
 
