@@ -178,7 +178,7 @@ router.post("/verify-nin", auth,trackActivity, async (req, res) => {
     
     // Call Dojah API
     const response = await axios.get(
-      `${process.env.DOJAH_BASE_URL_TEST}/api/v1/kyc/nin/advance`,
+      `${process.env.DOJAH_BASE_URL}/api/v1/kyc/nin/advance`,
       {
         headers: {
           AppId: process.env.DOJAH_APP_ID,

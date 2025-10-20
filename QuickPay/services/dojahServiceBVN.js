@@ -9,7 +9,7 @@ async function verifyBVN(bvn, first_name, last_name, dob) {
       throw { status: 400, message: "BVN is required" };
     }
     const response = await axios.get(
-      `${process.env.DOJAH_BASE_URL_TEST}/api/v1/kyc/bvn`,
+      `${process.env.DOJAH_BASE_URL}/api/v1/kyc/bvn`,
       {
         headers: {
           AppId: process.env.DOJAH_APP_ID,

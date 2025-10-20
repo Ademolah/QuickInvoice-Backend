@@ -37,6 +37,14 @@ router.put("/create-customer", authMiddleware,trackActivity, async (req, res) =>
     }
 
     console.log("Bvn checked");
+
+    const userId = req.userId;
+
+    // update user details
+    await User.findByIdAndUpdate(userId, {$set: 
+      {"bvn": bvn, "first_name": firstName, "last_name": lastName, "date_of_birth": dateOfBirth},
+    })
+
     
 
     // Build Anchor payload
@@ -68,14 +76,6 @@ router.put("/create-customer", authMiddleware,trackActivity, async (req, res) =>
         },
       },
     };
-
-    const userId = req.userId;
-
-    // update kyc details
-    await User.findByIdAndUpdate(userId, {$set: 
-      {"bvn": bvn, "first_name": firstName, "last_name": lastName},
-    })
-
     
 
     // Send to Anchor API
