@@ -12,11 +12,6 @@ const marketSquareSetupSchema = new mongoose.Schema({
     type: String,
     required: true,
   },
-  slug: {
-    type: String,
-    unique: true,
-    required: true,
-  },
   termsAccepted: {
     type: Boolean,
     default: false,

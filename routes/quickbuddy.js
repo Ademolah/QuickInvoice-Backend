@@ -4,6 +4,12 @@ const router = express.Router();
 const Invoice = require("../models/Invoice");
 const User = require("../models/Users"); // optional if you want name, etc.
 const auth = require("../middleware/authMiddleware"); // your auth middleware that sets req.userId
+const OpenAI = require('openai')
+
+const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+
+
+
 // Helper to create assistant prompt with context (read-only)
 function buildPrompt(userSummary, userMessage) {
   return [
@@ -94,4 +100,32 @@ router.post("/message", auth, async (req, res) => {
     return res.status(500).json({ success: false, message: "QuickBuddy failed to respond." });
   }
 });
+
+
+// Generate product description via Quick Buddy
+router.post("/generate-description",auth, async (req, res) => {
+  try {
+    const { name } = req.body;
+    if (!name) return res.status(400).json({ error: "Product name is required" });
+    const prompt = `
+    Write a short, catchy, and professional product description for an online store.
+    Product name: "${name}"
+    Tone: friendly, persuasive, and trustworthy.
+    Length: 2–3 sentences maximum.
+    Avoid emojis, slang, or unnecessary fluff.
+    Focus on highlighting the product’s value and appeal.
+    `;
+    const completion = await openai.chat.completions.create({
+      model: "gpt-4o-mini",
+      messages: [{ role: "user", content: prompt }],
+    });
+    const description = completion.choices[0].message.content;
+    res.json({ description });
+  } catch (error) {
+    console.error("Error generating product description:", error.message);
+    res.status(500).json({ error: "Failed to generate description" });
+  }
+});
+
+
 module.exports = router;

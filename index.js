@@ -12,6 +12,7 @@ const reportsRoute = require('./routes/reports')
 const inventoryRoutes = require('./routes/inventoryRoutes')
 const clientPaymentsRoutes = require('./routes/clientsPayments')
 const quickBuddyRoute = require('./routes/quickbuddy')
+const marketSquareRoute = require('./routes/marketSquareRoute')
 
 
 
@@ -223,6 +224,9 @@ app.use('/api/transactions', transactionsRoute)
 
 //AI ROUTES
 app.use('/api/quickbuddy', quickBuddyRoute)
+
+//MARKET SQUARE
+app.use('/api/marketsquare', marketSquareRoute)
 
 
 

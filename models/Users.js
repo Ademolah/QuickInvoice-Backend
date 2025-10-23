@@ -45,6 +45,11 @@ anchor: {
   createdAt: {type: Date, default: Date.now}
 },
 
+slug: {
+    type: String,
+    unique: true,
+    default: null
+  },
 
 plan: { type: String, enum: ["free", "pro"], default: "free" },
 usage: {
