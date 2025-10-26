@@ -37,7 +37,7 @@ function sendReminderEmail(user) {
     <tr>
       <td style="padding:30px;">
         <h2 style="font-family:Poppins, Arial, sans-serif; font-size:22px; margin:0; color:#0046A5;">
-          Subscription Expiring Soon :hourglass_flowing_sand:
+          Subscription Expiring Soon ⌛
         </h2>
         <p style="margin:16px 0; font-size:16px; line-height:1.6;">
           Hi <strong>${user.name}</strong>,
