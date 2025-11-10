@@ -46,12 +46,12 @@ const setupMarketSquare = async (req, res) => {
         message: "Please provide WhatsApp and accept terms.",
       });
     }
-    // :jigsaw: Get user
+    //  Get user
     const user = await User.findById(userId);
     if (!user) return res.status(404).json({ message: "User not found." });
     // Generate slug
     const slug = slugify(user.businessName || user.name, { lower: true });
-    // :jigsaw: Check if setup exists
+    // : Check if setup exists
     let setup = await MarketSquareSetup.findOne({ userId });
     if (setup) {
       setup.whatsapp = whatsapp;
@@ -187,6 +187,17 @@ const deleteProduct = async (req, res) => {
     if (!product) {
       return res.status(404).json({ message: "Product not found or unauthorized" });
     }
+
+    //delete product image from cloudinary
+    if(product.image){
+      try {
+        const publicId = product.image.split("/").pop().split(".")[0];
+        await cloudinary.uploader.destroy(publicId);
+      } catch (error) {
+        console.log("Cloudinary deletion failed: ", error.message);
+      }
+    }
+
     await product.deleteOne();
     res.status(200).json({ message: "Product deleted successfully" });
   } catch (error) {
