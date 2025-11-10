@@ -194,7 +194,7 @@ const deleteProduct = async (req, res) => {
         const imageUrl = product.image;
         const matches = imageUrl.match(/upload\/(?:v\d+\/)?([^\.]+)/);
         if (matches && matches[1]) {
-          const publicId = matches[1]; // e.g. quickinvoice_ng/products/dwn7vedloqemmskeidms
+          const publicId = matches[1]; // 
           const result = await cloudinary.uploader.destroy(publicId);
           console.log("🗑️ Cloudinary deletion result:", result);
         } else {
