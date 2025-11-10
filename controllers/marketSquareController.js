@@ -118,7 +118,7 @@ const addProduct = async (req, res) => {
       imageUrl = result.secure_url;
       imagePublicId = result.public_id;
     }
-    // :white_check_mark: Save product to DB
+    //  Save product to DB
     const product = await MarketProduct.create({
       userId,
       name,
@@ -137,7 +137,7 @@ const addProduct = async (req, res) => {
   }
 };
 
-// :jigsaw: Get User Products (for dashboard)
+//  Get User Products (for dashboard)
 const getMyProducts = async (req, res) => {
   try {
     const userId = req.userId;
@@ -189,12 +189,19 @@ const deleteProduct = async (req, res) => {
     }
 
     //delete product image from cloudinary
-    if(product.image){
+     if (product.image) {
       try {
-        const publicId = product.image.split("/").pop().split(".")[0];
-        await cloudinary.uploader.destroy(publicId);
-      } catch (error) {
-        console.log("Cloudinary deletion failed: ", error.message);
+        const imageUrl = product.image;
+        const matches = imageUrl.match(/upload\/(?:v\d+\/)?([^\.]+)/);
+        if (matches && matches[1]) {
+          const publicId = matches[1]; // e.g. quickinvoice_ng/products/dwn7vedloqemmskeidms
+          const result = await cloudinary.uploader.destroy(publicId);
+          console.log("🗑️ Cloudinary deletion result:", result);
+        } else {
+          console.warn(" Could not extract public_id from image URL:", imageUrl);
+        }
+      } catch (err) {
+        console.error("Cloudinary deletion failed:", err.message);
       }
     }
 
