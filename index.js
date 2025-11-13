@@ -15,6 +15,11 @@ const quickBuddyRoute = require('./routes/quickbuddy')
 const marketSquareRoute = require('./routes/marketSquareRoute')
 
 
+//PAYSTACK
+const checkoutRoutes = require("./routes/checkout")
+const banksRoutes = require('./routes/banks')
+
+
 
 
 const report = require('./routes/admin')
@@ -179,7 +184,7 @@ connectDb()
 const allowedOrigins = [
   "https://www.quickinvoiceng.com",
   "https://quickinvoiceng.com", // ✅ no www version too
-  // "http://localhost:3000",
+  "http://localhost:3000",
   "https://quick-invoice-frontend-two.vercel.app",
   "https://test-quickinvoice-frontend.vercel.app",
   "https://www.test-quickinvoice-frontend.vercel.app"
@@ -227,6 +232,10 @@ app.use('/api/quickbuddy', quickBuddyRoute)
 
 //MARKET SQUARE
 app.use('/api/marketsquare', marketSquareRoute)
+
+//paystack checkout
+app.use("/api/checkout", checkoutRoutes)
+app.use("/api/banks", banksRoutes)
 
 
 

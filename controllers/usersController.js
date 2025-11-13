@@ -5,16 +5,16 @@ const bcrypt = require('bcryptjs')
 // Update bank account details
 exports.updateAccountDetails = async (req, res) => {
   try {
-    const { bankName, accountNumber, accountName } = req.body;
+    const { bankName, accountNumber, accountName, bankCode } = req.body;
 
-    if (!bankName || !accountNumber || !accountName) {
+    if (!bankName || !accountNumber || !accountName || !bankCode) {
       return res.status(400).json({ message: 'All fields are required' });
     }
 
     const updatedUser = await User.findByIdAndUpdate(
       req.user.id,
       {
-        accountDetails: { bankName, accountNumber, accountName },
+        accountDetails: { bankName, accountNumber, accountName, bankCode },
       },
       { new: true }
     ).select('-passwordHash'); // Hide passwordHash in response

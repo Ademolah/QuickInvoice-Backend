@@ -11,27 +11,79 @@ const trackActivity = require('../middleware/trackActivity')
 const router = express.Router();
 
 // Create invoice
-router.post('/', auth,trackActivity, async (req, res) => {
-  try {
-    const { clientName, clientEmail, clientPhone, items = [], tax = 0, discount = 0, dueDate, notes } = req.body;
-    if (!clientName || !items.length) return res.status(400).json({ message: 'Client and items required' });
-    const subtotal = items.reduce((s, it) => s + (it.quantity * it.unitPrice), 0);
-    const total = Math.max(0, subtotal + tax - discount);
+// router.post('/', auth,trackActivity, async (req, res) => {
+//   try {
+//     const { clientName, clientEmail, clientPhone, items = [], tax = 0, discount = 0, dueDate, notes, outstandingBalance } = req.body;
+//     if (!clientName || !items.length) return res.status(400).json({ message: 'Client and items required' });
+//     const subtotal = items.reduce((s, it) => s + (it.quantity * it.unitPrice), 0);
+//     const total = Math.max(0, subtotal + tax - discount);
     
    
 
-    const computedItems = items.map(it => ({ ...it, total: it.quantity * it.unitPrice }));
-    const inv = await Invoice.create({
-      userId: req.userId, clientName, clientEmail, clientPhone, items: computedItems, subtotal, tax, discount, total, status: 'sent', dueDate, notes
-    });
+//     const computedItems = items.map(it => ({ ...it, total: it.quantity * it.unitPrice }));
+//     const inv = await Invoice.create({
+//       userId: req.userId, clientName, clientEmail, clientPhone, items: computedItems, subtotal, tax, discount, total, outstandingBalance, status: 'sent', dueDate, notes
+//     });
 
     
+//     res.json(inv);
+//   } catch (e) {
+//     console.error(e);
+//   res.status(500).json({ message: 'Server error' });
+//   }
+// });
+router.post('/', auth, trackActivity, async (req, res) => {
+  try {
+    const {
+      clientName,
+      clientEmail,
+      clientPhone,
+      items = [],
+      tax = 0,
+      discount = 0,
+      dueDate,
+      notes,
+      outstandingBalance // new field from frontend
+    } = req.body;
+    if (!clientName || !items.length) {
+      return res.status(400).json({ message: 'Client name and items are required' });
+    }
+    // calculate totals
+    const subtotal = items.reduce((s, it) => s + (it.quantity * it.unitPrice), 0);
+    const total = Math.max(0, subtotal + tax - discount);
+    // compute item totals for each item
+    const computedItems = items.map(it => ({
+      ...it,
+      total: it.quantity * it.unitPrice
+    }));
+    // use provided outstandingBalance, or default to total
+    const finalOutstanding = (typeof outstandingBalance === 'number')
+      ? outstandingBalance
+      : total;
+    const inv = await Invoice.create({
+      userId: req.userId,
+      clientName,
+      clientEmail,
+      clientPhone,
+      items: computedItems,
+      subtotal,
+      tax,
+      discount,
+      total,
+      outstandingBalance: finalOutstanding, // new field
+      status: 'sent',
+      dueDate,
+      notes
+    });
     res.json(inv);
   } catch (e) {
     console.error(e);
-  res.status(500).json({ message: 'Server error' });
+    res.status(500).json({ message: 'Server error' });
   }
 });
+
+
+
 
 // List invoices for user
 router.get('/', auth,trackActivity, async (req, res) => {

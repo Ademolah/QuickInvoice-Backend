@@ -18,6 +18,7 @@ const invoiceSchema = new mongoose.Schema({
   tax: { type: Number, default: 0 },
   discount: { type: Number, default: 0 },
   total: { type: Number, required: true },
+  outstandingBalance: {type: Number, default: 0},
   status: { type: String, enum: ['draft', 'sent', 'paid', 'overdue'], default: 'draft' },
   notes: { type: String },
   dueDate: { type: Date },

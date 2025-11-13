@@ -10,7 +10,8 @@ const userSchema = new mongoose.Schema({
   accountDetails: {
   bankName: { type: String },
   accountNumber: { type: String },
-  accountName: { type: String }
+  accountName: { type: String },
+  bankCode: {type: String}
 },// from Paystack
 
 //KYC DETAILS
@@ -34,6 +35,10 @@ tokenVersion: { type: Number, default: 0 },
 //Avatar fields
 avatar: {type:String},
 avatarPublicId: {type: String},
+
+//paystack
+paystackSubaccountCode: {type: String},
+paystackSplitCode: {type: String},
 
 
 //Anchor details
