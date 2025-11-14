@@ -3,18 +3,51 @@ const User = require('../models/Users');
 const bcrypt = require('bcryptjs')
 
 // Update bank account details
+// exports.updateAccountDetails = async (req, res) => {
+//   try {
+//     const { bankName, accountNumber, accountName, bankCode } = req.body;
+
+//     if (!bankName || !accountNumber || !accountName || !bankCode) {
+//       return res.status(400).json({ message: 'All fields are required' });
+//     }
+
+//     const updatedUser = await User.findByIdAndUpdate(
+//       req.user.id,
+//       {
+//         accountDetails: { bankName, accountNumber, accountName, bankCode },
+//       },
+//       { new: true }
+//     ).select('-passwordHash'); // Hide passwordHash in response
+
+//     if (!updatedUser) {
+//       return res.status(404).json({ message: 'User not found' });
+//     }
+
+//     res.json({
+//       message: 'Account details updated successfully',
+//       accountDetails: updatedUser.accountDetails,
+//     });
+//   } catch (error) {
+//     console.error(error);
+//     res.status(500).json({ message: 'Server error' });
+//   }
+// };
+
+
+
+// Update bank account details
 exports.updateAccountDetails = async (req, res) => {
   try {
-    const { bankName, accountNumber, accountName, bankCode } = req.body;
+    const { bankName, accountNumber, accountName } = req.body;
 
-    if (!bankName || !accountNumber || !accountName || !bankCode) {
+    if (!bankName || !accountNumber || !accountName) {
       return res.status(400).json({ message: 'All fields are required' });
     }
 
     const updatedUser = await User.findByIdAndUpdate(
       req.user.id,
       {
-        accountDetails: { bankName, accountNumber, accountName, bankCode },
+        accountDetails: { bankName, accountNumber, accountName},
       },
       { new: true }
     ).select('-passwordHash'); // Hide passwordHash in response
@@ -32,6 +65,9 @@ exports.updateAccountDetails = async (req, res) => {
     res.status(500).json({ message: 'Server error' });
   }
 };
+
+
+
 
 exports.changePassword = async (req, res) => {
   try {
