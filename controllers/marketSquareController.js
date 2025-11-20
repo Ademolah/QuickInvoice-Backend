@@ -88,7 +88,7 @@ const setupMarketSquare = async (req, res) => {
 const addProduct = async (req, res) => {
   try {
     const userId = req.userId;
-    const { name, price, description } = req.body;
+    const { name, price, description, category } = req.body;
     if (!name || !price) {
       return res.status(400).json({ message: "Name and price are required." });
     }
@@ -123,6 +123,7 @@ const addProduct = async (req, res) => {
       userId,
       name,
       price,
+      category,
       description,
       image: imageUrl,
       imagePublicId,

@@ -19,6 +19,11 @@ const marketProductSchema = new mongoose.Schema({
     type: Number,
     required: true,
   },
+  category: {
+    type: String,
+    enum: ["Electronics",'Gadgets', "Fashion", "Home", "Books", "Toys", "Health", "Sports","Groceries", "Beauty", "Automotive","Other",],
+    default: "Other",
+  },
   image: {
     type: String, // Cloudinary URL
   },

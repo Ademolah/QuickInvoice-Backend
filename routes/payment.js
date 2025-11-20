@@ -5,6 +5,7 @@ const protect = require('../middleware/authMiddleware'); // your protect
 const User = require('../models/Users');
 const crypto = require('crypto')
 const sendSubscriptionEmail = require('../utils/sendSubscriptionEmail')
+const Order = require('../models/Order')
 
 const router = express.Router();
 
@@ -15,6 +16,30 @@ const PLAN_PRICE = Number(process.env.PLAN_PRICE_KOBO); // in kobo
 // const PLAN_PRICE = Number(process.env.PLAN_PRICE_KOBO || 50000); // in kobo
 
 // initialize transaction
+// router.post('/initialize', protect, async (req, res) => {
+//   try {
+//     const userId = req.userId || req.user.id;
+//     const user = await User.findById(userId);
+//     if (!user) return res.status(404).json({ message: 'User not found' });
+
+//     const response = await axios.post('https://api.paystack.co/transaction/initialize', {
+//       email: user.email,
+//       amount: PLAN_PRICE, // in kobo
+//       callback_url: `https://www.quickinvoiceng.com/billing`, // customer returns here
+//       metadata: { userId, type: "subscription" } // save user id to metadata for verify
+//     }, {
+//       headers: { Authorization: `Bearer ${PAYSTACK_SECRET}` }
+//     });
+
+//     // respond with authorization url and reference
+//     return res.json({ status: true, data: response.data.data });
+//   } catch (err) {
+//     console.error('Paystack initialize error', err.response?.data || err.message);
+//     return res.status(500).json({ status: false, message: 'Payment init failed' });
+//   }
+// });
+
+
 router.post('/initialize', protect, async (req, res) => {
   try {
     const userId = req.userId || req.user.id;
@@ -169,6 +194,81 @@ router.post(
     }
   }
 );
+
+
+
+// router.post(
+//   "/webhook",
+//   express.raw({ type: "application/json" }),
+//   async (req, res) => {
+//     try {
+//       // ===== VERIFY SIGNATURE =====
+//       const signature = req.headers["x-paystack-signature"];
+//       const rawBody = req.body.toString();
+//       const expected = crypto
+//         .createHmac("sha512", PAYSTACK_SECRET)
+//         .update(rawBody)
+//         .digest("hex");
+//       if (signature !== expected) {
+//         return res.status(400).send("Invalid signature");
+//       }
+//       // ===== PARSE PAYSTACK EVENT =====
+//       const event = JSON.parse(rawBody);
+//       const eventType = event.event;
+//       const tx = event.data;
+//       // Only process successful charges
+//       if (eventType !== "charge.success") {
+//         return res.status(200).send("Ignored");
+//       }
+//       // ===== ROUTE LOGIC BASED ON METADATA =====
+//       const meta = tx.metadata || {};
+//       // ================================
+//       //  SUBSCRIPTION PAYMENT
+//       // ================================
+//       if (metadata.type === "subscription") {
+//         const user = await User.findById(meta.userId);
+//         if (user) {
+//           const now = new Date();
+//           const currentExpiry =
+//             user.proExpires && user.proExpires > now
+//               ? new Date(user.proExpires)
+//               : now;
+//           user.plan = "pro";
+//           user.proExpires = new Date(
+//             currentExpiry.getTime() + 30 * 24 * 60 * 60 * 1000
+//           );
+//           await user.save();
+//           await sendSubscriptionEmail(user.name, user.email);
+//           console.log("✅ Subscription upgraded for", user.email);
+//         }
+//         return res.status(200).send("Subscription handled");
+//       }
+//       // ================================
+//       //  MARKET ZONE ORDER PAYMENT
+//       // ================================
+//       if (metadata.type === "market_order") {
+//         const order = await Order.findById(meta.orderId);
+//         if (!order) {
+//           console.warn("⚠️ Order not found:", meta.orderId);
+//           return res.status(200).send("Order missing");
+//         }
+//         order.status = "paid";
+    
+//         await order.save();
+//         console.log("🛒 Order marked PAID:", order._id);
+//         return res.status(200).send("Order payment handled");
+//       }
+//       // ================================
+//       //  UNKNOWN METADATA TYPE
+//       // ================================
+//       console.warn("⚠️ Unknown webhook payment type received");
+//       return res.status(200).send("Unknown type");
+//     } catch (err) {
+//       console.error("🔥 Webhook error", err);
+//       return res.status(500).send("Server Error");
+//     }
+//   }
+// );
 
 router.get("/callback", async (req, res) => {
   const reference = req.query.reference;

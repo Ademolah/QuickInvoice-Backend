@@ -12,6 +12,21 @@ const orderSchema = new mongoose.Schema({
   paystackReference: String,
   paystackAuthorizationUrl: String,
   status: { type: String, enum: ["pending", "paid", "failed"], default: "pending" },
+
+  
+  //courier
+  courier: {
+   courier_id: String,
+   courier_name: String,
+   amount: Number,
+   eta: String,
+   },
+  tracking: {
+    tracking_number: String,
+    tracking_url: String,
+    },
+  shippingStatus: { type: String, default: "pending" },
+
   metadata: { type: Object, default: {} },
 }, { timestamps: true });
 

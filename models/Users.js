@@ -50,6 +50,15 @@ anchor: {
   createdAt: {type: Date, default: Date.now}
 },
 
+//pickup address
+pickupAddress :{
+  street: {type: String},
+  city: {type: String},
+  state: {type: String},
+  country: {type: String},
+  postalCode: {type: String}
+},
+
 slug: {
     type: String,
     unique: true,

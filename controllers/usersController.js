@@ -1,8 +1,41 @@
 // controllers/userController.js
 const User = require('../models/Users');
 const bcrypt = require('bcryptjs')
+const asyncHandler = require("express-async-handler");
 
-// Update bank account details
+
+exports.updatePickupAddress = asyncHandler(async (req, res) => {
+  const userId  = req.userId;
+  const { street, city, state, country, postalCode } = req.body;
+  // Validation
+  if (!street || !city || !state || !country || !postalCode) {
+    return res.status(400).json({
+      message: "All pickup address fields are required",
+    });
+  }
+  const user = await User.findByIdAndUpdate(
+    userId,
+    {
+      pickupAddress: {
+        street,
+        city,
+        state,
+        country,
+        postalCode,
+      },
+    },
+    { new: true }
+  );
+  if (!user) {
+    return res.status(404).json({ message: "User not found" });
+  }
+  res.json({
+    message: "Pickup address updated successfully",
+    pickupAddress: user.pickupAddress,
+  });
+});
+
+
 exports.updateAccountDetails = async (req, res) => {
   try {
     const { bankName, accountNumber, accountName, bankCode } = req.body;
