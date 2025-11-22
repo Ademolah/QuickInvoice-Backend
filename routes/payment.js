@@ -210,22 +210,27 @@ router.post(
 //         .update(rawBody)
 //         .digest("hex");
 //       if (signature !== expected) {
+//         console.warn(":x: Invalid signature");
 //         return res.status(400).send("Invalid signature");
 //       }
-//       // ===== PARSE PAYSTACK EVENT =====
-//       const event = JSON.parse(rawBody);
+//       // ===== PARSE EVENT =====
+//       let event;
+//       try {
+//         event = JSON.parse(rawBody);
+//       } catch (e) {
+//         return res.status(400).send("Invalid JSON");
+//       }
 //       const eventType = event.event;
 //       const tx = event.data;
-//       // Only process successful charges
-//       if (eventType !== "charge.success") {
+//       // ===== ONLY PROCESS SUCCESSFUL PAYMENTS =====
+//       if (eventType !== "charge.success" && eventType !== "transaction.success") {
 //         return res.status(200).send("Ignored");
 //       }
-//       // ===== ROUTE LOGIC BASED ON METADATA =====
 //       const meta = tx.metadata || {};
 //       // ================================
 //       //  SUBSCRIPTION PAYMENT
 //       // ================================
-//       if (metadata.type === "subscription") {
+//       if (meta.type === "subscription") {
 //         const user = await User.findById(meta.userId);
 //         if (user) {
 //           const now = new Date();
@@ -234,41 +239,40 @@ router.post(
 //               ? new Date(user.proExpires)
 //               : now;
 //           user.plan = "pro";
-//           user.proExpires = new Date(
-//             currentExpiry.getTime() + 30 * 24 * 60 * 60 * 1000
-//           );
+//           user.proExpires = new Date(currentExpiry.getTime() + 30 * 24 * 60 * 60 * 1000);
 //           await user.save();
 //           await sendSubscriptionEmail(user.name, user.email);
-//           console.log("✅ Subscription upgraded for", user.email);
+//           console.log(":heavy_check_mark: Subscription upgraded for", user.email);
 //         }
 //         return res.status(200).send("Subscription handled");
 //       }
 //       // ================================
-//       //  MARKET ZONE ORDER PAYMENT
+//       //  MARKET ORDER PAYMENT
 //       // ================================
-//       if (metadata.type === "market_order") {
+//       if (meta.type === "market_order") {
 //         const order = await Order.findById(meta.orderId);
 //         if (!order) {
 //           console.warn("⚠️ Order not found:", meta.orderId);
 //           return res.status(200).send("Order missing");
 //         }
 //         order.status = "paid";
-    
 //         await order.save();
 //         console.log("🛒 Order marked PAID:", order._id);
 //         return res.status(200).send("Order payment handled");
 //       }
 //       // ================================
-//       //  UNKNOWN METADATA TYPE
+//       //  UNKNOWN TYPE
 //       // ================================
-//       console.warn("⚠️ Unknown webhook payment type received");
+//       console.warn("⚠️ Unknown payment metadata type");
 //       return res.status(200).send("Unknown type");
 //     } catch (err) {
-//       console.error("🔥 Webhook error", err);
+//       console.error(":fire: Webhook Error:", err);
 //       return res.status(500).send("Server Error");
 //     }
 //   }
 // );
+
+
 
 router.get("/callback", async (req, res) => {
   const reference = req.query.reference;

@@ -24,6 +24,17 @@ const marketProductSchema = new mongoose.Schema({
     enum: ["Electronics",'Gadgets', "Fashion", "Home", "Books", "Toys", "Health", "Sports","Groceries", "Beauty", "Automotive","Other",],
     default: "Other",
   },
+
+  //shipping
+  // shipping_category: {
+  //   type: String,
+  //   required: true,
+  // },
+  // shipping_category_id: {
+  //   type: Number,
+  //   required: true,
+  // },
+
   image: {
     type: String, // Cloudinary URL
   },

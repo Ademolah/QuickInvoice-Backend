@@ -1,55 +1,78 @@
-const asyncHandler = require("express-async-handler");
+
 const shipbubbleClient = require("../utils/shipbubble");
 const User = require("../models/Users");
 const Shipment = require("../models/Shipments"); // optional but recommended
 const crypto = require("crypto");
+const asyncHandler = require("express-async-handler");
+const axios = require('axios')
 /**
  * POST /api/logistics/validate-address
  * Body: { name, email, phone, address, latitude?, longitude?, role?: 'vendor'|'buyer', userId?: vendorIdIfSaving }
  * If role === 'vendor' and you provide userId (or use auth), the validated address_code will be saved to user.pickupAddress + user.pickupAddressCode
  */
-exports.validateAddress = asyncHandler(async (req, res) => {
-  const { name, email, phone, address, latitude, longitude, role } = req.body;
-  if (!name || !email || !phone || !address) {
-    return res.status(400).json({ message: "name, email, phone and address are required" });
-  }
+exports.validateVendorAddress = async (req, res) => {
   try {
-    const payload = { name, email, phone, address };
-    if (latitude) payload.latitude = latitude;
-    if (longitude) payload.longitude = longitude;
-    const sbRes = await shipbubbleClient.post("/v1/shipping/address/validate", payload);
-    if (!sbRes?.data) {
-      return res.status(500).json({ message: "Empty response from Shipbubble" });
+    const { vendorId } = req.body;
+    if (!vendorId) {
+      return res.status(400).json({ status: "failed", message: "vendorId is required" });
     }
-    const data = sbRes.data.data;
-    // Optionally save vendor pickup address to user if role === 'vendor' and req.userId exists
-    // Support two methods: auth middleware sets req.userId OR client can send userId in body (less secure)
-    if (role === "vendor") {
-      const userId = req.userId || req.body.userId;
-      if (userId) {
-        const user = await User.findById(userId);
-        if (user) {
-          user.pickupAddress = {
-            street: data.street || data.street || address,
-            city: data.city || "",
-            state: data.state || "",
-            country: data.country || "Nigeria",
-            postalCode: data.postal_code || "",
-            latitude: data.latitude,
-            longitude: data.longitude,
-          };
-          user.pickupAddressCode = data.address_code; // store address code for future fetch_rates
-          await user.save();
-        }
-      }
+    const vendor = await User.findById(vendorId);
+    if (!vendor) {
+      return res.status(404).json({ status: "failed", message: "Vendor not found" });
     }
-    return res.json({ status: "success", data });
+    if (!vendor.pickupAddress) {
+      return res.status(400).json({ status: "failed", message: "Vendor has no pickup address" });
+    }
+    const { street, city, state, country} = vendor.pickupAddress;
+    const fullAddress = `${street}, ${city}, ${state}, ${country}`.trim();
+    console.log("Validating vendor address:", fullAddress);
+    const payload = {
+      name: vendor.businessName || vendor.name,
+      email: vendor.email,
+      phone: vendor.phone || "08000000000",
+      address: fullAddress
+    };
+    const response = await axios.post(
+      "https://api.shipbubble.com/v1/shipping/address/validate",
+      payload,
+      { headers: { Authorization: `Bearer ${process.env.SHIPBUBBLE_API_KEY}` } }
+    );
+    return res.json({
+      status: "success",
+      senderAddressCode: response.data.data.address_code
+    });
   } catch (err) {
-    console.error("Shipbubble validate-address error:", err.response?.data || err.message);
-    const status = err.response?.status || 500;
-    return res.status(status).json({ message: "Address validation failed", error: err.response?.data || err.message });
+    console.log("Vendor validation error:", err.response?.data || err);
+    return res.status(500).json({ status: "failed", message: "Vendor address validation failed" });
   }
-});
+};
+
+
+exports.validateCustomerAddress = async (req, res) => {
+  try {
+    const { name, email, phone, address } = req.body;
+    if (!address || !name || !email || !phone) {
+      return res.status(400).json({
+        status: "failed",
+        message: "Address, name, email and phone are required"
+      });
+    }
+    const payload = { address, name, email, phone };
+    console.log(address, name, email, phone);
+    const response = await axios.post(
+      "https://api.shipbubble.com/v1/shipping/address/validate",
+      payload,
+      { headers: { Authorization: `Bearer ${process.env.SHIPBUBBLE_API_KEY}` } }
+    );
+    return res.json({
+      status: "success",
+      receiverAddressCode: response.data.data.address_code
+    });
+  } catch (err) {
+    console.log("Customer validation error:", err.response?.data || err);
+    return res.status(500).json({ status: "failed", message: "Customer address validation failed" });
+  }
+};
 /**
  * GET /api/logistics/categories
  * Returns label/package categories that will be used as category_id in fetch_rates
@@ -89,40 +112,117 @@ exports.getCouriers = asyncHandler(async (req, res) => {
  *   package_dimension: { length, width, height }
  * }
  */
-exports.fetchRates = asyncHandler(async (req, res) => {
-  const {
-    sender_address_code,
-    reciever_address_code,
-    pickup_date,
-    category_id,
-    package_items,
-    service_type,
-    delivery_instructions,
-    package_dimension,
-  } = req.body;
-  if (!sender_address_code || !reciever_address_code || !pickup_date || !category_id || !Array.isArray(package_items) || package_items.length === 0) {
-    return res.status(400).json({ message: "sender_address_code, reciever_address_code, pickup_date, category_id and package_items are required" });
-  }
+exports.fetchGeneralRates = async (req, res) => {
   try {
+    const {
+      sender_address_code,
+      reciever_address_code,
+      pickup_date,
+      category_id,
+      package_items,
+      package_dimension,
+      service_type,
+      delivery_instructions
+    } = req.body;
+    // Validate all required fields
+    const errors = [];
+    if (!sender_address_code) errors.push("Sender address code is required");
+    if (!reciever_address_code) errors.push("Receipient address code is required");
+    if (!pickup_date) errors.push("Pickup date is required");
+    if (!category_id) errors.push("Please select a package category");
+    if (!package_items || package_items.length === 0) errors.push("Package items are required");
+    if (!package_dimension) errors.push("Package dimension is required");
+    if (errors.length > 0) {
+      return res.status(400).json({ status: "failed", message: errors[0], errors });
+    }
     const payload = {
       sender_address_code,
       reciever_address_code,
       pickup_date,
       category_id,
       package_items,
+      service_type: service_type || "pickup",
+      delivery_instructions: delivery_instructions || "",
+      package_dimension
     };
-    if (service_type) payload.service_type = service_type;
-    if (delivery_instructions) payload.delivery_instructions = delivery_instructions;
-    if (package_dimension) payload.package_dimension = package_dimension;
-    const sbRes = await shipbubbleClient.post("/v1/shipping/fetch_rates", payload);
-    // sbRes.data.data contains request_token and couriers array according to docs
-    return res.json({ status: "success", data: sbRes.data.data || {} });
+
+    console.log("Payload for fetch rates: ", payload);
+    const response = await axios.post(
+      "https://api.shipbubble.com/v1/shipping/fetch_rates",
+      payload,
+      {
+        headers: {
+          Authorization: `Bearer ${process.env.SHIPBUBBLE_API_KEY}`
+        }
+      }
+    );
+    return res.json({
+      status: "success",
+      data: response.data.data
+    });
   } catch (err) {
-    console.error("SHIPBUBBLE fetch_rates ERROR:", err.response?.data || err.message);
-    const status = err.response?.status || 500;
-    return res.status(status).json({ message: "Unable to fetch shipping rates", error: err.response?.data || err.message });
+    console.log("Fetch general rates error:", err.response?.data || err.message);
+    return res.status(500).json({
+      status: "failed",
+      message: "Could not fetch rates",
+      error: err.response?.data || err.message
+    });
   }
-});
+};
+
+
+exports.fetchSelectedCourierRates = async (req, res) => {
+  try {
+    const { service_codes } = req.params;
+    const {
+      sender_address_code,
+      reciever_address_code,
+      pickup_date,
+      category_id,
+      package_items,
+      package_dimension,
+      service_type,
+      delivery_instructions
+    } = req.body;
+    const errors = [];
+    if (!sender_address_code) errors.push("Sender address code is required");
+    if (!reciever_address_code) errors.push("Receipient address code is required");
+    if (!pickup_date) errors.push("Pickup date is required");
+    if (!category_id) errors.push("Please select a package category");
+    if (!package_items || package_items.length === 0) errors.push("Package items are required");
+    if (!package_dimension) errors.push("Package dimension is required");
+    if (errors.length > 0) {
+      return res.status(400).json({ status: "failed", message: errors[0], errors });
+    }
+    const payload = {
+      sender_address_code,
+      reciever_address_code,
+      pickup_date,
+      category_id,
+      package_items,
+      service_type: service_type || "pickup",
+      delivery_instructions: delivery_instructions || "",
+      package_dimension
+    };
+    const response = await axios.post(
+      `https://api.shipbubble.com/v1/shipping/fetch_rates/${service_codes}`,
+      payload,
+      {
+        headers: {
+          Authorization: `Bearer ${process.env.SHIPBUBBLE_API_KEY}`
+        }
+      }
+    );
+    return res.json({ status: "success", data: response.data.data });
+  } catch (err) {
+    console.log("Fetch selected courier error:", err.response?.data || err.message);
+    return res.status(500).json({
+      status: "failed",
+      message: "Could not fetch courier-specific rate",
+      error: err.response?.data || err.message
+    });
+  }
+};
 /**
  * POST /api/logistics/create-shipment
  * Body: { request_token, service_code, courier_id, is_cod_label?, is_invoice_required?, items: [ {name, description, weight, amount, quantity} ] }

@@ -131,8 +131,6 @@ const globalLimiter = rateLimit({
   
 app.use(globalLimiter);
 app.disable('x-powered-by');
-app.use(express.json({ limit: '100kb' }));
-app.use(express.urlencoded({ extended: true, limit: '100kb' }));
 app.use(cookieParser());
 app.use(compression());
 app.use(hpp());
@@ -206,6 +204,9 @@ app.use(cors({
 
 app.use('/api/payments', paymentRoute)
 
+
+app.use(express.json({ limit: '100kb' }));
+app.use(express.urlencoded({ extended: true, limit: '100kb' }));
 app.use(express.json())
 
 
