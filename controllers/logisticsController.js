@@ -5,6 +5,30 @@ const Shipment = require("../models/Shipments"); // optional but recommended
 const crypto = require("crypto");
 const asyncHandler = require("express-async-handler");
 const axios = require('axios')
+const Order = require('../models/Order')
+
+
+
+
+
+// get user state
+
+exports.getUserAddress = asyncHandler(async (req, res) => {
+  try {
+    const { vendorId } = req.body;
+    if(!vendorId){
+      return res.status(400).json({status: "failed", message: "vendorId is required"})
+    }
+
+    const vendor = await User.findById(vendorId)
+
+    return res.json({status: "success", data: vendor.pickupAddress || null})
+    
+  } catch (error) {
+    console.log("Get user state error:", error);
+    return res.status(500).json({ status: "failed", message: "Could not fetch user state", error: error.message });
+  }
+})
 /**
  * POST /api/logistics/validate-address
  * Body: { name, email, phone, address, latitude?, longitude?, role?: 'vendor'|'buyer', userId?: vendorIdIfSaving }
@@ -93,7 +117,7 @@ exports.getCategories = asyncHandler(async (req, res) => {
 exports.getCouriers = asyncHandler(async (req, res) => {
   try {
     const sbRes = await shipbubbleClient.get("/v1/shipping/couriers");
-    return res.json({ status: "success", data: sbRes.data.data || [] });
+    return res.json({ status: "success", data: sbRes.data || [] });
   } catch (err) {
     console.error("Shipbubble couriers error:", err.response?.data || err.message);
     return res.status(500).json({ message: "Could not fetch couriers", error: err.response?.data || err.message });
@@ -227,44 +251,52 @@ exports.fetchSelectedCourierRates = async (req, res) => {
  * POST /api/logistics/create-shipment
  * Body: { request_token, service_code, courier_id, is_cod_label?, is_invoice_required?, items: [ {name, description, weight, amount, quantity} ] }
  */
-exports.createShipment = asyncHandler(async (req, res) => {
-  const { request_token, service_code, courier_id, is_cod_label = false, items = [], is_invoice_required = false } = req.body;
-  if (!request_token || !service_code || !courier_id || !Array.isArray(items) || items.length === 0) {
-    return res.status(400).json({ message: "request_token, service_code, courier_id and items are required" });
-  }
+
+exports.createShipment = async (req, res) => {
   try {
+    const { request_token, service_code, courier_id, orderId } = req.body;
+    // Validate required fields
+    if (!request_token || !service_code || !courier_id) {
+      return res.status(400).json({
+        status: "fail",
+        message: "request_token, service_code and courier_id are required"
+      });
+    }
+    // Build payload (only required fields)
     const payload = {
       request_token,
       service_code,
-      courier_id,
-      is_cod_label,
-      is_invoice_required,
-      items,
+      courier_id
     };
-    const sbRes = await shipbubbleClient.post("/v1/shipping/labels", payload);
-    // Optionally persist shipment to DB
-    const shipmentData = sbRes.data?.data || {};
-    const shipment = await Shipment.create({
-      request_token,
-      courier_id,
-      service_code,
-      shipbubble_response: shipmentData,
-      status: shipmentData.status || "pending",
-      // save minimal summary fields
-      order_id: shipmentData.order_id,
-      tracking_url: shipmentData.tracking_url,
-      payment: shipmentData.payment || {},
-      ship_from: shipmentData.ship_from || {},
-      ship_to: shipmentData.ship_to || {},
-      items: shipmentData.items || [],
+    // ShipBubble API request
+    const sbRes = await axios.post(
+      "https://api.shipbubble.com/v1/shipping/labels",
+      payload,
+      {
+        headers: {
+          Authorization: `Bearer ${process.env.SHIPBUBBLE_API_KEY}`,
+          "Content-Type": "application/json"
+        },
+      }
+    );
+    console.log("Tracking url :", sbRes.data.data.tracking_url);
+
+    await Order.findByIdAndUpdate(orderId, { tracking_url: sbRes.data.data.tracking_url }, { new: true });
+    
+    return res.status(200).json({
+      status: "success",
+      message: "Shipment created successfully",
+      data: sbRes.data
     });
-    return res.json({ status: "success", data: shipmentData, local: shipment });
-  } catch (err) {
-    console.error("SHIPBUBBLE create label ERROR:", err.response?.data || err.message);
-    const status = err.response?.status || 500;
-    return res.status(status).json({ message: "Could not create shipment", error: err.response?.data || err.message });
+  } catch (error) {
+    console.error("ShipBubble Create Shipment Error:", error.response?.data || error);
+    return res.status(500).json({
+      status: "error",
+      message: "Could not create shipment",
+      details: error.response?.data || error.message
+    });
   }
-});
+};
 /**
  * POST /api/logistics/webhook
  * Shipbubble will post events here; verify signature header 'x-ship-signature'
@@ -310,3 +342,5 @@ exports.shipbubbleWebhook = asyncHandler(async (req, res) => {
     return res.status(500).send("Server error");
   }
 });
+
+

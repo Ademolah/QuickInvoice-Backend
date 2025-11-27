@@ -1,7 +1,7 @@
 const nodemailer = require("nodemailer");
 
 
-const sendOrderConfirmationEmail = async(buyerName,orderId, email,orderDate, vendorBusinessName, buyerAddress, deliveryType, subtotal,deliveryFee, totalAmount)=>{
+const sendOrderConfirmationEmail = async(buyerName,orderId, email,orderDate, vendorBusinessName, buyerAddress, subtotal,deliveryFee, totalAmount, orderName, orderQuantity, trackingUrl)=>{
     
         
     
@@ -57,33 +57,36 @@ const sendOrderConfirmationEmail = async(buyerName,orderId, email,orderDate, ven
         <!-- Order Details Table -->
         <table style="width:100%; border-collapse:collapse;">
           <tr>
+            <td style="padding:8px 0;"><strong>Vendor:</strong></td>
+            <td style="padding:8px 0;">${vendorBusinessName}</td>
+          </tr>
+          <tr>
+            <td style="padding:8px 0;"><strong>Order Name:</strong></td>
+            <td style="padding:8px 0;">${orderName}</td>
+          </tr>
+          <tr>
+            <td style="padding:8px 0;"><strong>Order Quantity:</strong></td>
+            <td style="padding:8px 0;">${orderQuantity}</td>
+          </tr>
+          <tr>
             <td style="padding:8px 0;"><strong>Order ID:</strong></td>
             <td style="padding:8px 0;">${orderId}</td>
+          </tr>
+          <tr>
+            <td style="padding:8px 0;"><strong>Tracking URL:</strong></td>
+            <td style="padding:8px 0;">${trackingUrl}</td>
           </tr>
           <tr>
             <td style="padding:8px 0;"><strong>Date:</strong></td>
             <td style="padding:8px 0;">${orderDate}</td>
           </tr>
           <tr>
-            <td style="padding:8px 0;"><strong>Vendor:</strong></td>
-            <td style="padding:8px 0;">${vendorBusinessName}</td>
-          </tr>
-          <tr>
             <td style="padding:8px 0;"><strong>Delivery Address:</strong></td>
             <td style="padding:8px 0;">${buyerAddress}</td>
           </tr>
-          <tr>
-            <td style="padding:8px 0;"><strong>Delivery Type:</strong></td>
-            <td style="padding:8px 0;">${deliveryType}</td>
-          </tr>
         </table>
-        <!-- Order Items -->
-        <h3 style="font-family:Poppins; font-size:18px; margin:25px 0 10px;">Items Ordered</h3>
-        <table width="100%" style="border-collapse:collapse;">
-          ${itemsHTML}
-        </table>
-        <!-- Summary -->
-        <h3 style="font-family:Poppins; font-size:18px; margin:25px 0 10px;">Order Summary</h3>
+        <!-- Order Summary -->
+        <h3 style="font-family:Poppins; font-size:18px; margin:30px 0 10px;">Order Summary</h3>
         <table style="width:100%; border-collapse:collapse;">
           <tr>
             <td style="padding:8px 0;">Subtotal:</td>
@@ -107,8 +110,12 @@ const sendOrderConfirmationEmail = async(buyerName,orderId, email,orderDate, ven
     </tr>
     <!-- Footer -->
     <tr>
-      <td align="center" style="padding:20px; font-size:13px; color:#6B7280; background:#F9FAFB;">
-        © 2025 QuickInvoice NG. All rights reserved.
+      <td style="padding:20px; background:#F9FAFB;">
+        <center>
+          <p style="margin:0; font-size:13px; color:#6B7280; text-align:center;">
+            © 2025 QuickInvoice NG. All rights reserved.
+          </p>
+        </center>
       </td>
     </tr>
   </table>
@@ -117,7 +124,7 @@ const sendOrderConfirmationEmail = async(buyerName,orderId, email,orderDate, ven
        `,
     });
 
-    console.log("✅ order confirmation email sent via Resend", info.messageId );
+    console.log("✅ Order confirmation email sent via Resend", info.messageId );
     // console.log("Message sent:", info.messageId);
     })();
     } catch (error) {

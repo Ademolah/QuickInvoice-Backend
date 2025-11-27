@@ -83,7 +83,7 @@ app.use((req, res, next) => {
 const badActors = new Map(); // ip => { count, blockedUntil }
 function blockIpTemporarily(ip, seconds = 300) {
   badActors.set(ip, { blockedUntil: Date.now() + seconds * 1000 });
-  console.warn(`:warning: Blocking IP ${ip} for ${seconds}s`);
+  console.warn(`⚠️ Blocking IP ${ip} for ${seconds}s`);
 }
 
 app.use((req, res, next) => {

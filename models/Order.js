@@ -6,14 +6,15 @@ const orderSchema = new mongoose.Schema({
   buyerName: String,
   buyerEmail: String,
   buyerPhone: String,
+  buyerAddress: String,
   items: { type: Array, default: [] }, // array of { productId?, name, qty, price }
   amount: { type: Number, required: true }, // in kobo or naira? we'll store in kobo for clarity
   currency: { type: String, default: "NGN" },
   paystackReference: String,
   paystackAuthorizationUrl: String,
   status: { type: String, enum: ["pending", "paid", "failed"], default: "pending" },
+  tracking_url: {type: String, default: ""},
 
-  
   //courier
   courier: {
    courier_id: String,
@@ -25,7 +26,7 @@ const orderSchema = new mongoose.Schema({
     tracking_number: String,
     tracking_url: String,
     },
-  shippingStatus: { type: String, default: "pending" },
+  shippingStatus: { type: String, enum: ["pending", "shipped", "processing"], default: "pending" },
 
   metadata: { type: Object, default: {} },
 }, { timestamps: true });

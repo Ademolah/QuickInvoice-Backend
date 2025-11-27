@@ -55,65 +55,10 @@ const setupMarketSquare = async (req, res) => {
 
 
 //  Add Product
-// const addProduct = async (req, res) => {
-//   try {
-//     const userId = req.userId;
-//     const { name, price, description, category, shipping_category, shipping_category_id } = req.body;
-//     if (!name || !price) {
-//       return res.status(400).json({ message: "Name and price are required." });
-//     }
-//     let imageUrl = null;
-//     let imagePublicId = null;
-//     // :white_check_mark: Upload to Cloudinary using buffer stream (like avatar)
-//     if (req.file && req.file.buffer) {
-//       const bufferStreamUpload = (buffer) =>
-//         new Promise((resolve, reject) => {
-//           const stream = cloudinary.uploader.upload_stream(
-//             {
-//               folder: `quickinvoice_ng/products`,
-//               transformation: [
-//                 { width: 1200, height: 1200, crop: "limit" },
-//                 { quality: "auto" },
-//               ],
-//               format: "png",
-//             },
-//             (error, result) => {
-//               if (error) return reject(error);
-//               resolve(result);
-//             }
-//           );
-//           stream.end(buffer);
-//         });
-//       const result = await bufferStreamUpload(req.file.buffer);
-//       imageUrl = result.secure_url;
-//       imagePublicId = result.public_id;
-//     }
-//     //  Save product to DB
-//     const product = await MarketProduct.create({
-//       userId,
-//       name,
-//       price,
-//       category,
-//       shipping_category,
-//       shipping_category_id,
-//       description,
-//       image: imageUrl,
-//       imagePublicId,
-//     });
-//     res.status(201).json({
-//       message: "Product added successfully",
-//       product,
-//     });
-//   } catch (error) {
-//     console.error("Add Product Error:", error);
-//     res.status(500).json({ message: "Server error" });
-//   }
-// };
-
 const addProduct = async (req, res) => {
   try {
     const userId = req.userId;
-    const { name, price, description, category} = req.body;
+    const { name, price, description, category, shipping_category, shipping_category_id } = req.body;
     if (!name || !price) {
       return res.status(400).json({ message: "Name and price are required." });
     }
@@ -149,6 +94,8 @@ const addProduct = async (req, res) => {
       name,
       price,
       category,
+      shipping_category,
+      shipping_category_id,
       description,
       image: imageUrl,
       imagePublicId,
@@ -162,6 +109,59 @@ const addProduct = async (req, res) => {
     res.status(500).json({ message: "Server error" });
   }
 };
+
+// const addProduct = async (req, res) => {
+//   try {
+//     const userId = req.userId;
+//     const { name, price, description, category} = req.body;
+//     if (!name || !price) {
+//       return res.status(400).json({ message: "Name and price are required." });
+//     }
+//     let imageUrl = null;
+//     let imagePublicId = null;
+//     // :white_check_mark: Upload to Cloudinary using buffer stream (like avatar)
+//     if (req.file && req.file.buffer) {
+//       const bufferStreamUpload = (buffer) =>
+//         new Promise((resolve, reject) => {
+//           const stream = cloudinary.uploader.upload_stream(
+//             {
+//               folder: `quickinvoice_ng/products`,
+//               transformation: [
+//                 { width: 1200, height: 1200, crop: "limit" },
+//                 { quality: "auto" },
+//               ],
+//               format: "png",
+//             },
+//             (error, result) => {
+//               if (error) return reject(error);
+//               resolve(result);
+//             }
+//           );
+//           stream.end(buffer);
+//         });
+//       const result = await bufferStreamUpload(req.file.buffer);
+//       imageUrl = result.secure_url;
+//       imagePublicId = result.public_id;
+//     }
+//     //  Save product to DB
+//     const product = await MarketProduct.create({
+//       userId,
+//       name,
+//       price,
+//       category,
+//       description,
+//       image: imageUrl,
+//       imagePublicId,
+//     });
+//     res.status(201).json({
+//       message: "Product added successfully",
+//       product,
+//     });
+//   } catch (error) {
+//     console.error("Add Product Error:", error);
+//     res.status(500).json({ message: "Server error" });
+//   }
+// };
 
 //  Get User Products (for dashboard)
 const getMyProducts = async (req, res) => {
