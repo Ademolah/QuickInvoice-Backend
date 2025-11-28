@@ -134,7 +134,7 @@ const sendOrderCorrespondenceEmail = async(buyerName,orderId, email,buyerPhone,o
                     <td style="padding:8px 0; font-weight:bold;">₦${totalAmount.toLocaleString()}</td>
                 </tr>
                 <tr>
-                    <td style="padding:8px 0; font-weight:bold;">Vendor Payout (5% fee):</td>
+                    <td style="padding:8px 0; font-weight:bold;">Vendor Payout (10% fee):</td>
                     <td style="padding:8px 0; font-weight:bold; color:#00B86B;">₦${vendorPayout.toLocaleString()}</td>
                 </tr>
             </table>

@@ -264,7 +264,7 @@ router.post(
 
         const staffEmail = "aminadiallo645@gmail.com"
         const deliveryFee = Number(amount) - subtotal;
-        const vendorPayout = Math.round((subtotal * 0.95) + deliveryFee);
+        const vendorPayout = Math.round((subtotal * 0.90) + deliveryFee);
         if (!order) {
           console.warn("⚠️ Order not found:", meta.orderId);
           return res.status(200).send("Order missing");
