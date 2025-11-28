@@ -21,7 +21,7 @@ const marketProductSchema = new mongoose.Schema({
   },
   category: {
     type: String,
-    enum: ["Electronics",'Gadgets', "Fashion", "Home", "Books", "Toys", "Health", "Sports","Groceries", "Beauty", "Automotive","Other",],
+    enum: ["Electronics",'Gadgets', "Fashion", "Home","Hot Food", "Books", "Toys", "Health", "Sports","Groceries", "Beauty", "Automotive","Other",],
     default: "Other",
   },
 
