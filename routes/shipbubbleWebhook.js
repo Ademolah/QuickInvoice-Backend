@@ -3,7 +3,7 @@ const router = express.Router();
 const { shipbubbleWebhook } = require("../controllers/shipbubbleWebhookControlller");
 
 
-router.post("/webhook/shipbubble", express.json({ verify: rawBodySaver }), shipbubbleWebhook);
+router.post("/webhook", express.json({ verify: rawBodySaver }), shipbubbleWebhook);
 
 // Required to capture raw body for signature validation
 function rawBodySaver(req, res, buf) {

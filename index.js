@@ -14,6 +14,7 @@ const clientPaymentsRoutes = require('./routes/clientsPayments')
 const quickBuddyRoute = require('./routes/quickbuddy')
 const marketSquareRoute = require('./routes/marketSquareRoute')
 const logisticRoutes = require('./routes/logisticsRoutes')
+const shipbubbleRoute = require('./routes/shipbubbleWebhook')
 
 
 //PAYSTACK
@@ -241,6 +242,9 @@ app.use("/api/banks", banksRoutes)
 
 //Logistics
 app.use("/api/logistics", logisticRoutes)
+app.use("/api/shipbubble", shipbubbleRoute)
+
+app.use('/api/sandbox', require('./routes/sandboxWebhookShip'))
 
 
 

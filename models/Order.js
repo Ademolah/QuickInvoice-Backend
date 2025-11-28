@@ -14,6 +14,8 @@ const orderSchema = new mongoose.Schema({
   paystackAuthorizationUrl: String,
   status: { type: String, enum: ["pending", "paid", "failed"], default: "pending" },
   tracking_url: {type: String, default: ""},
+  
+  shipbubble_order_id: { type: String }, 
 
   //courier
   courier: {
@@ -26,7 +28,7 @@ const orderSchema = new mongoose.Schema({
     tracking_number: String,
     tracking_url: String,
     },
-  shippingStatus: { type: String, enum: ["pending", "shipped", "processing"], default: "pending" },
+  shippingStatus: { type: String, default: "pending" },
 
   metadata: { type: Object, default: {} },
 }, { timestamps: true });

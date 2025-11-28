@@ -270,7 +270,7 @@ router.post(
           return res.status(200).send("Order missing");
         }
         order.status = "paid";
-        order.shippingStatus = "shipped"
+        // order.shippingStatus = "shipped"
         await order.save();
         
         console.log(order);
