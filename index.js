@@ -16,6 +16,7 @@ const marketSquareRoute = require('./routes/marketSquareRoute')
 const logisticRoutes = require('./routes/logisticsRoutes')
 const shipbubbleRoute = require('./routes/shipbubbleWebhook')
 const vendorRoute = require('./routes/vendorRoutes')
+const marketProducts = require('./routes/marketProductRoutes')
 
 
 //PAYSTACK
@@ -236,6 +237,7 @@ app.use('/api/quickbuddy', quickBuddyRoute)
 
 //MARKET SQUARE
 app.use('/api/marketsquare', marketSquareRoute)
+app.use('/api/market-products', marketProducts)
 
 //paystack checkout
 app.use("/api/checkout", checkoutRoutes)

@@ -126,3 +126,29 @@ exports.changePassword = async (req, res) => {
     res.status(500).json({ message: 'Server error' });
   }
 };
+
+
+exports.getVendorSlug = async (req, res) => {
+  try {
+    const vendorId = req.params.id;
+    const vendor = await User.findById(vendorId).select("slug businessName");
+    if (!vendor) {
+      return res.status(404).json({
+        success: false,
+        message: "Vendor not found"
+      });
+    }
+    return res.json({
+      success: true,
+      slug: vendor.slug,
+      businessName: vendor.businessName
+    });
+  } catch (error) {
+    console.error("Get Vendor Slug Error:", error);
+    res.status(500).json({
+      success: false,
+      message: "Server error",
+      error: error.message
+    });
+  }
+};
