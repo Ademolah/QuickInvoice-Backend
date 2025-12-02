@@ -3,25 +3,82 @@ const MarketSquareSetup = require("../models/MarketSquareSetup");
 const MarketProduct = require("../models/MarketProduct");
 const User = require("../models/Users");
 const slugify = require("slugify");
-const cloudinary = require("../utils/cloudinary"); // adjust path if neede
+const cloudinary = require("../utils/cloudinary");
+const ReferralCode = require("../models/ReferralCode");
 
 //  Create or Update MarketSquare Setup
+
+// const setupMarketSquare = async (req, res) => {
+//   try {
+//     const userId = req.userId;
+//     const { whatsapp, termsAccepted } = req.body;
+//     if (!whatsapp || !termsAccepted) {
+//       return res.status(400).json({
+//         message: "Please provide WhatsApp and accept terms.",
+//       });
+//     }
+//     //  Get user
+//     const user = await User.findById(userId);
+//     if (!user) return res.status(404).json({ message: "User not found." });
+//     // Generate slug
+//     const slug = slugify(user.businessName || user.name, { lower: true });
+//     // : Check if setup exists
+//     let setup = await MarketSquareSetup.findOne({ userId });
+//     if (setup) {
+//       setup.whatsapp = whatsapp;
+//       setup.termsAccepted = termsAccepted;
+//       setup.slug = slug;
+//       await setup.save();
+//     } else {
+//       setup = await MarketSquareSetup.create({
+//         userId, // :white_check_mark: matches schema
+//         whatsapp,
+//         termsAccepted,
+//         slug,
+//       });
+//     }
+//     // :white_check_mark: Update user's slug
+//     user.slug = slug;
+//     await user.save();
+
+//     const updatedUser = await User.findById(userId).select("slug businessName");
+
+//     res.status(200).json({
+//       message: "MarketSquare setup complete",
+//       setup,
+//       user: updatedUser,
+//     });
+//   } catch (error) {
+//     console.error("Setup Error:", error);
+//     res.status(500).json({ message: "Server error" });
+//   }
+// };
 
 const setupMarketSquare = async (req, res) => {
   try {
     const userId = req.userId;
-    const { whatsapp, termsAccepted } = req.body;
-    if (!whatsapp || !termsAccepted) {
+    const { whatsapp, termsAccepted, referralCode } = req.body;
+    if (!whatsapp || !termsAccepted || !referralCode) {
       return res.status(400).json({
-        message: "Please provide WhatsApp and accept terms.",
+        message: "Please provide WhatsApp, referral code, and accept terms.",
       });
     }
-    //  Get user
+    // Validate referral code
+    const validCode = await ReferralCode.findOne({ code: referralCode });
+    if (!validCode) {
+      return res.status(400).json({ message: "Invalid or already used referral code." });
+    }
+    // Get user
     const user = await User.findById(userId);
     if (!user) return res.status(404).json({ message: "User not found." });
+    // Assign referral code to user
+    user.referralCode = referralCode;
+    await user.save();
+    // Delete referral code so it can’t be reused
+    await ReferralCode.deleteOne({ code: referralCode });
     // Generate slug
     const slug = slugify(user.businessName || user.name, { lower: true });
-    // : Check if setup exists
+    // Check if setup exists
     let setup = await MarketSquareSetup.findOne({ userId });
     if (setup) {
       setup.whatsapp = whatsapp;
@@ -30,18 +87,15 @@ const setupMarketSquare = async (req, res) => {
       await setup.save();
     } else {
       setup = await MarketSquareSetup.create({
-        userId, // :white_check_mark: matches schema
+        userId,
         whatsapp,
         termsAccepted,
         slug,
       });
     }
-    // :white_check_mark: Update user's slug
     user.slug = slug;
     await user.save();
-
-    const updatedUser = await User.findById(userId).select("slug businessName");
-
+    const updatedUser = await User.findById(userId).select("slug businessName referralCode");
     res.status(200).json({
       message: "MarketSquare setup complete",
       setup,
