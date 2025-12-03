@@ -75,8 +75,8 @@ exports.initiateCheckout = asyncHandler(async (req, res) => {
       type: "percentage",
       currency: "NGN",
       subaccounts: [
-        { subaccount: vendor.paystackSubaccountCode, share: 90 },
-        { subaccount: platformSub, share: 10 },
+        { subaccount: vendor.paystackSubaccountCode, share: 97 },
+        { subaccount: platformSub, share: 3 },
       ],
       bearer_type: "subaccount",
       bearer_subaccount: vendor.paystackSubaccountCode,
