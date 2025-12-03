@@ -262,7 +262,7 @@ router.post(
           0
         );
 
-        const staffEmail = "aminadiallo645@gmail.com"
+        const staffEmail = "adeakinyemi129@gmail.com"
         const deliveryFee = Number(amount) - subtotal;
         const vendorPayout = Math.round((subtotal * 0.90) + deliveryFee);
         if (!order) {

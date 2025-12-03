@@ -1,6 +1,6 @@
 
 const express = require("express")
-const { setupMarketSquare, addProduct, getMyProducts, getPublicProducts, getMarketSquareSetup, deleteProduct } = require("../controllers/marketSquareController");
+const { setupMarketSquare, addProduct, getMyProducts, getPublicProducts, getMarketSquareSetup, deleteProduct, editProduct } = require("../controllers/marketSquareController");
 const  auth  = require("../middleware/authMiddleware");
 const upload = require("../middleware/upload");
 const User = require("../models/Users");
@@ -41,6 +41,8 @@ router.get('/store/:slug', asyncHandler(async (req, res) => {
     products,
   });
 }));
+
+router.patch('/product/:id', auth, upload.single('image'), editProduct)
 
 
 module.exports = router;

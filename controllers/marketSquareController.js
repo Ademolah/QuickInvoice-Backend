@@ -268,8 +268,78 @@ const getMarketSquareSetup = async (req, res) => {
   }
 };
 
+const editProduct = async (req, res) => {
+  try {
+    const userId = req.userId;
+    const productId = req.params.id;
+    const { name, price, description, category, shipping_category, shipping_category_id } = req.body;
+    // Validate
+    if (!name || !price) {
+      return res.status(400).json({ message: "Name and price are required." });
+    }
+    // Find existing product
+    const product = await MarketProduct.findOne({ _id: productId, userId });
+    if (!product) {
+      return res.status(404).json({ message: "Product not found." });
+    }
+    let imageUrl = product.image;
+    let imagePublicId = product.imagePublicId;
+    // If user uploaded a replacement image
+    if (req.file && req.file.buffer) {
+      // Delete old image if exists
+      if (imagePublicId) {
+        await cloudinary.uploader.destroy(imagePublicId);
+      }
+      // Upload new one
+      const uploadStream = () =>
+        new Promise((resolve, reject) => {
+          const stream = cloudinary.uploader.upload_stream(
+            {
+              folder: "quickinvoice_ng/products",
+              transformation: [
+                { width: 1200, height: 1200, crop: "limit" },
+                { quality: "auto" },
+              ],
+              format: "png",
+            },
+            (err, result) => {
+              if (err) reject(err);
+              resolve(result);
+            }
+          );
+          stream.end(req.file.buffer);
+        });
+      const result = await uploadStream();
+      imageUrl = result.secure_url;
+      imagePublicId = result.public_id;
+    }
+    // Update database
+    const updatedProduct = await MarketProduct.findByIdAndUpdate(
+      productId,
+      {
+        name,
+        price,
+        description,
+        category,
+        shipping_category,
+        shipping_category_id,
+        image: imageUrl,
+        imagePublicId,
+      },
+      { new: true }
+    );
+    res.json({
+      message: "Product updated successfully",
+      product: updatedProduct,
+    });
+  } catch (err) {
+    console.error("Edit Product Error:", err);
+    res.status(500).json({ message: "Server error" });
+  }
+};
 
-module.exports = {setupMarketSquare, getPublicProducts, addProduct, getMyProducts, getMarketSquareSetup, deleteProduct};
+
+module.exports = {setupMarketSquare, getPublicProducts, addProduct, getMyProducts, getMarketSquareSetup, deleteProduct, editProduct};
 
 
 
