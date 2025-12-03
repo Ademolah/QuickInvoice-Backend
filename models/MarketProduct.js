@@ -26,14 +26,14 @@ const marketProductSchema = new mongoose.Schema({
   },
 
   //shipping
-  // shipping_category: {
-  //   type: String,
-  //   required: true,
-  // },
-  // shipping_category_id: {
-  //   type: Number,
-  //   required: true,
-  // },
+  shipping_category: {
+    type: String,
+    required: true,
+  },
+  shipping_category_id: {
+    type: Number,
+    required: true,
+  },
 
   image: {
     type: String, // Cloudinary URL
