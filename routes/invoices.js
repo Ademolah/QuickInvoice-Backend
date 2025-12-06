@@ -57,9 +57,19 @@ router.post('/', auth, trackActivity, async (req, res) => {
       total: it.quantity * it.unitPrice
     }));
     // use provided outstandingBalance, or default to total
-    const finalOutstanding = (typeof outstandingBalance === 'number')
-      ? outstandingBalance
-      : total;
+    // const finalOutstanding = (typeof outstandingBalance === 'number')
+    //   ? outstandingBalance
+    //   : total;
+
+    const finalOutstanding =
+      outstandingBalance !== undefined &&
+      outstandingBalance !== null &&
+      outstandingBalance !== "" &&
+      !isNaN(Number(outstandingBalance))
+        ? Number(outstandingBalance)
+        : 0;
+
+
     const inv = await Invoice.create({
       userId: req.userId,
       clientName,
