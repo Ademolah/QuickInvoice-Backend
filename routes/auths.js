@@ -41,12 +41,14 @@ router.post("/register", async (req, res) => {
     const salt = await bcrypt.genSalt(10);
     const passwordHash = await bcrypt.hash(password, salt);
 
+    
+
     // Create user
     const newUser = new User({
       name,
       email,
-      phone: `+234${req.body.phone}`,
-      // phone: `${req.body.dialCode}${req.body.phone}`,
+      // phone: `+234${req.body.phone}`,
+      phone: `${req.body.dialCode}${req.body.phone}`,
       businessName,
       passwordHash
     });

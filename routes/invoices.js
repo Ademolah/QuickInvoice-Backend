@@ -56,10 +56,7 @@ router.post('/', auth, trackActivity, async (req, res) => {
       ...it,
       total: it.quantity * it.unitPrice
     }));
-    // use provided outstandingBalance, or default to total
-    // const finalOutstanding = (typeof outstandingBalance === 'number')
-    //   ? outstandingBalance
-    //   : total;
+    
 
     const finalOutstanding =
       outstandingBalance !== undefined &&
