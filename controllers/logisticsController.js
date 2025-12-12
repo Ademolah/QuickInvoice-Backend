@@ -1,7 +1,7 @@
 
 const shipbubbleClient = require("../utils/shipbubble");
 const User = require("../models/Users");
-const Shipment = require("../models/Shipments"); // optional but recommended
+const Shipment = require("../models/Shipments"); 
 const crypto = require("crypto");
 const asyncHandler = require("express-async-handler");
 const axios = require('axios')
@@ -61,10 +61,12 @@ exports.validateVendorAddress = async (req, res) => {
       payload,
       { headers: { Authorization: `Bearer ${process.env.SHIPBUBBLE_API_KEY}` } }
     );
+    console.log("✅Address validated: ", fullAddress);
     return res.json({
       status: "success",
       senderAddressCode: response.data.data.address_code
     });
+    
   } catch (err) {
     console.log("Vendor validation error:", err.response?.data || err);
     return res.status(500).json({ status: "failed", message: "Vendor address validation failed" });
@@ -82,12 +84,12 @@ exports.validateCustomerAddress = async (req, res) => {
       });
     }
     const payload = { address, name, email, phone };
-    console.log(address, name, email, phone);
     const response = await axios.post(
       "https://api.shipbubble.com/v1/shipping/address/validate",
       payload,
       { headers: { Authorization: `Bearer ${process.env.SHIPBUBBLE_API_KEY}` } }
     );
+    console.log("✅Customer Address validated");
     return res.json({
       status: "success",
       receiverAddressCode: response.data.data.address_code
