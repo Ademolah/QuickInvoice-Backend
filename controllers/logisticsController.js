@@ -36,6 +36,7 @@ exports.getUserAddress = asyncHandler(async (req, res) => {
  */
 exports.validateVendorAddress = async (req, res) => {
   try {
+
     const { vendorId } = req.body;
     if (!vendorId) {
       return res.status(400).json({ status: "failed", message: "vendorId is required" });
@@ -51,9 +52,9 @@ exports.validateVendorAddress = async (req, res) => {
     const fullAddress = `${street}, ${city}, ${state}, ${country}`.trim();
     console.log("Validating vendor address:", fullAddress);
     const payload = {
-      name: vendor.businessName || vendor.name,
+      name:  vendor.name,
       email: vendor.email,
-      phone: vendor.phone || "08000000000",
+      phone: vendor.phone ,
       address: fullAddress
     };
     const response = await axios.post(

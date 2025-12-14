@@ -51,7 +51,7 @@ exports.initiateCheckout = asyncHandler(async (req, res) => {
       account_number: vendor.accountDetails.accountNumber,
       primary_contact_name: vendor.name,
       primary_contact_email: vendor.email,
-      percentage_charge: 3,
+      percentage_charge: 0,
     };
     const saRes = await createSubaccount(saPayload);
     if (!saRes || !saRes.data) {
