@@ -264,7 +264,7 @@ router.post(
 
         const staffEmail = "adeakinyemi129@gmail.com"
         const deliveryFee = Number(amount) - subtotal;
-        const vendorPayout = Math.round((subtotal * 0.97) + deliveryFee);
+        const vendorPayout = Math.round((subtotal * 0.95) + deliveryFee);
         if (!order) {
           console.warn("⚠️ Order not found:", meta.orderId);
           return res.status(200).send("Order missing");
