@@ -24,6 +24,10 @@ const marketProductSchema = new mongoose.Schema({
     enum: ["Electronics",'Gadgets', "Fashion", "Home","Hot Food", "Books", "Toys", "Health", "Sports","Groceries", "Beauty", "Automotive","Other",],
     default: "Other",
   },
+  inStock : {
+    type: Boolean,
+    default: true
+  },
 
   //shipping
   shipping_category: {
