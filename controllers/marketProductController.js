@@ -8,7 +8,7 @@ const MarketProduct = require("../models/MarketProduct");
 
 exports.getAllMarketProducts = asyncHandler(async (req, res) => {
   try {
-    const products = await MarketProduct.aggregate([{ $sample: { size: 150 } }]); // randomly fetch up to 50
+    const products = await MarketProduct.aggregate([{ $sample: { size: 250 } }]); // randomly fetch up to 50
     res.json({ success: true, products });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });
