@@ -12,7 +12,6 @@ const router = express.Router();
  */
 router.post("/", auth, trackActivity, async (req, res) => {
   try {
-    console.log(req.body)
     const { name, price, stock, sku, category, description, active } = req.body;
     if (!name || price == null || stock == null) {
       return res.status(400).json({ message: "Name, price and stock are required" });
@@ -22,8 +21,6 @@ router.post("/", auth, trackActivity, async (req, res) => {
     if (!user) {
       return res.status(401).json({ message: "User not found" });
     }
-    //  If FREE plan, enforce inventory limit
-    console.log("user :",user.name)
     if (user.plan === "free") {
       const itemCount = await Product.countDocuments({ userId: req.userId });
       if (itemCount >= 80) {
