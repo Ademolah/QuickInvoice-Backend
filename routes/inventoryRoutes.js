@@ -2,6 +2,7 @@ const express = require('express');
 const Product = require('../models/Products');
 const auth = require('../middleware/authMiddleware');
 const trackActivity = require('../middleware/trackActivity')
+const User = require('../models/Users')
 
 const router = express.Router();
 
@@ -9,34 +10,49 @@ const router = express.Router();
  * Create product
  * POST /api/inventory
  */
-router.post('/', auth,trackActivity, async (req, res) => {
+router.post("/", auth, trackActivity, async (req, res) => {
   try {
+    console.log(req.body)
     const { name, price, stock, sku, category, description, active } = req.body;
-
     if (!name || price == null || stock == null) {
-      return res.status(400).json({ message: 'Name, price and stock are required' });
+      return res.status(400).json({ message: "Name, price and stock are required" });
     }
-
+    // Fetch user
+    const user = await User.findById(req.userId).select("plan");
+    if (!user) {
+      return res.status(401).json({ message: "User not found" });
+    }
+    //  If FREE plan, enforce inventory limit
+    console.log("user :",user.name)
+    if (user.plan === "free") {
+      const itemCount = await Product.countDocuments({ userId: req.userId });
+      if (itemCount >= 80) {
+        return res.status(403).json({
+          message:
+            "You’ve reached the free inventory limit (80 items). Please upgrade to Pro to add unlimited products.",
+          code: "UPGRADE_REQUIRED",
+        });
+      }
+    }
+    //  Create product
     const payload = {
       userId: req.userId,
       name: String(name).trim(),
       price: Number(price),
-      category: String(category).trim() ,
+      category: category ? String(category).trim() : "General",
       stock: Math.max(0, parseInt(stock, 10)),
       sku: sku ? String(sku).trim() : undefined,
       description,
       active: active !== undefined ? !!active : true,
     };
-
     const product = await Product.create(payload);
     res.status(201).json(product);
   } catch (err) {
-    // Handle unique index error (duplicate name per user)
     if (err?.code === 11000) {
-      return res.status(409).json({ message: 'A product with this name already exists' });
+      return res.status(409).json({ message: "A product with this name already exists" });
     }
     console.error(err);
-    res.status(500).json({ message: 'Server error' });
+    res.status(500).json({ message: "Server error" });
   }
 });
 
