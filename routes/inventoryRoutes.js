@@ -94,12 +94,13 @@ router.get('/:id', auth,trackActivity, async (req, res) => {
  */
 router.put('/:id', auth,trackActivity, async (req, res) => {
   try {
-    const { name, price, stock, sku, description, active } = req.body;
+    const { name, price, stock,category, sku, description, active } = req.body;
 
     const update = {};
     if (name !== undefined) update.name = String(name).trim();
     if (price !== undefined) update.price = Number(price);
     if (stock !== undefined) update.stock = Math.max(0, parseInt(stock, 10));
+    if(category !== undefined) update.category = String(category).trim();
     if (sku !== undefined) update.sku = sku ? String(sku).trim() : '';
     if (description !== undefined) update.description = description;
     if (active !== undefined) update.active = !!active;
@@ -152,7 +153,7 @@ router.get("/export/all", auth, async (req, res) => {
     res.status(500).json({ message: "Failed to export inventory" });
   }
 });
-// :warning: KEEP THIS LAST
+// KEEP THIS LAST
 router.get("/:id", auth, async (req, res) => {
   if (!mongoose.Types.ObjectId.isValid(req.params.id)) {
     return res.status(400).json({ message: "Invalid product id" });
