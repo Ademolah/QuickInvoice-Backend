@@ -57,7 +57,7 @@ router.post("/register", async (req, res) => {
 
     // Create JWT token
     const token = jwt.sign(
-      { id: newUser._id, email: newUser.email },
+      { id: newUser._id, email: newUser.email, businessName: newUser.businessName },
       process.env.JWT_SECRET,
       { expiresIn: "40m" }
     );
@@ -116,7 +116,7 @@ router.post("/login", authLimiter, async (req, res) => {
     await user.save();
 
     const token = jwt.sign(
-      { id: user._id, email: user.email, tokenVersion: user.tokenVersion },
+      { id: user._id, email: user.email, tokenVersion: user.tokenVersion, businessName: user.businessName },
       process.env.JWT_SECRET,
       { expiresIn: "40m" }
     );

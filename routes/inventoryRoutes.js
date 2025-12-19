@@ -136,4 +136,32 @@ router.delete('/:id', auth,trackActivity, async (req, res) => {
   }
 });
 
+
+router.get("/export/all", auth, async (req, res) => {
+  try {
+    const items = await Product.find({ userId: req.userId })
+      .sort({ createdAt: -1 })
+      .select("name sku price stock category description active createdAt");
+    res.json({
+      success: true,
+      count: items.length,
+      items,
+    });
+  } catch (err) {
+    console.error("Inventory export error:", err);
+    res.status(500).json({ message: "Failed to export inventory" });
+  }
+});
+// :warning: KEEP THIS LAST
+router.get("/:id", auth, async (req, res) => {
+  if (!mongoose.Types.ObjectId.isValid(req.params.id)) {
+    return res.status(400).json({ message: "Invalid product id" });
+  }
+  const product = await Product.findOne({
+    _id: req.params.id,
+    userId: req.userId,
+  });
+  res.json(product);
+});
+
 module.exports = router;
