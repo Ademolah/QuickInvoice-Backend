@@ -17,6 +17,9 @@ const logisticRoutes = require('./routes/logisticsRoutes')
 const shipbubbleRoute = require('./routes/shipbubbleWebhook')
 const vendorRoute = require('./routes/vendorRoutes')
 const marketProducts = require('./routes/marketProductRoutes')
+const startInvoiceReminderCron = require('./utils/invoiceCron')
+
+startInvoiceReminderCron()
 
 
 //PAYSTACK
@@ -185,7 +188,7 @@ connectDb()
 // }))
 const allowedOrigins = [
   "https://www.quickinvoiceng.com",
-  "https://quickinvoiceng.com", // ✅ no www version too
+  "https://quickinvoiceng.com", 
   // "http://localhost:3000",
   "https://quick-invoice-frontend-two.vercel.app",
   "https://test-quickinvoice-frontend.vercel.app",
@@ -250,6 +253,7 @@ app.use("/api/shipbubble", shipbubbleRoute)
 app.use('/api/sandbox', require('./routes/sandboxWebhookShip'))
 
 app.use('/api/vendor', vendorRoute)
+
 
 
 
