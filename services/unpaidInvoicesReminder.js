@@ -6,7 +6,7 @@ const generateInvoiceReminderEmail = require("../utils/generateInvoiceReminderEm
 
 const FOUR_DAYS = 1000 * 60 * 60 * 24 * 4;
 
-
+// const FOUR_DAYS = 1000 * 60 * 2
 
 
 async function sendUnpaidInvoiceReminders() {

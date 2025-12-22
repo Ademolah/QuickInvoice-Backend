@@ -182,10 +182,7 @@ connectDb()
 
 
 
-// app.use(cors({
-//     origin: ["http://localhost:3000", "https://quick-invoice-frontend-two.vercel.app/"],
-//     Credential: true
-// }))
+
 const allowedOrigins = [
   "https://www.quickinvoiceng.com",
   "https://quickinvoiceng.com", 
