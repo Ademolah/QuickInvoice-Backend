@@ -18,7 +18,11 @@ const shipbubbleRoute = require('./routes/shipbubbleWebhook')
 const vendorRoute = require('./routes/vendorRoutes')
 const marketProducts = require('./routes/marketProductRoutes')
 const startInvoiceReminderCron = require('./utils/invoiceCron')
+const startSubscriptionExpiryCron = require('./utils/subscriptionExpiryCron')
 
+
+//CRON JOBS
+startSubscriptionExpiryCron()
 startInvoiceReminderCron()
 
 

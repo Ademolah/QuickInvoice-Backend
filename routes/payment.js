@@ -246,7 +246,7 @@ router.post(
           user.proExpires = new Date(currentExpiry.getTime() + 30 * 24 * 60 * 60 * 1000);
           await user.save();
           await sendSubscriptionEmail(user.name, user.email);
-          console.log(":heavy_check_mark: Subscription upgraded for", user.email);
+          console.log("✔️ Subscription upgraded for", user.email);
         }
         return res.status(200).send("Subscription handled");
       }

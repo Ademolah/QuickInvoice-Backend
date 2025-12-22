@@ -33,16 +33,16 @@ const checkUsage= async (req, res, next) => {
       }
 
       // check pro expiry
-      if (user.plan === 'pro') {
-        if (user.proExpires && new Date(user.proExpires) > now) {
-          return next(); // still pro
-        } else {
-          // downgrade if expired
-          user.plan = 'free';
-          user.proExpires = null;
-          await user.save();
-        }
-      }
+      // if (user.plan === 'pro') {
+      //   if (user.proExpires && new Date(user.proExpires) > now) {
+      //     return next(); // still pro
+      //   } else {
+      //     // downgrade if expired
+      //     user.plan = 'free';
+      //     user.proExpires = null;
+      //     await user.save();
+      //   }
+      // }
 
       // now user.plan is 'free'
       const totalUsage = (user.usage.invoicesThisMonth || 0) + (user.usage.receiptsThisMonth || 0);
