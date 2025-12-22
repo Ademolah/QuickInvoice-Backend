@@ -14,7 +14,7 @@ function startSubscriptionExpiryCron() {
       user.plan = "free";
       user.proExpires = null;
       await user.save();
-      console.log(":arrow_down: Downgraded expired user:", user.email);
+      console.log("⬇️ Downgraded expired user:", user.email);
     }
   });
 }
