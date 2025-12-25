@@ -12,7 +12,7 @@ function generateInvoiceReminderEmail({
   <div style="font-family: Inter, Arial, sans-serif; background:#F9FAFB; padding:30px;">
     <div style="max-width:600px;margin:auto;background:#ffffff;border-radius:12px;overflow:hidden;">
       <!-- Header -->
-      <div style="background:linear-gradient(90deg,#0046A5,#00B86B);color:white;padding:20px;text-align:center;">
+      <div style="background:linear-gradient(90deg,#0028AE,#00A6FA);color:white;padding:20px;text-align:center;">
         <h1 style="margin:0; font-family:Poppins, Arial, sans-serif; font-size:24px; color:#FFFFFF;">QuickInvoice</h1>
       </div>
       <!-- Body -->

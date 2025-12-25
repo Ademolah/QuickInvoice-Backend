@@ -38,7 +38,7 @@ const sendWelcomeEmail = async(name, email, businessName)=>{
   <table align="center" width="100%" cellpadding="0" cellspacing="0" style="max-width:600px; background:#FFFFFF; border-radius:12px; box-shadow:0 4px 12px rgba(0,0,0,0.05); overflow:hidden;">
     <!-- Header -->
     <tr>
-      <td align="center" style="background:linear-gradient(90deg,#0046A5,#00B86B); padding:20px;">
+      <td align="center" style="background:linear-gradient(90deg,#0028AE,#00A6FA); padding:20px;">
         <h1 style="margin:0; font-family:Poppins, Arial, sans-serif; font-size:24px; color:#FFFFFF;">QuickInvoice NG</h1>
       </td>
     </tr>
