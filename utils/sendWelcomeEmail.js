@@ -39,7 +39,7 @@ const sendWelcomeEmail = async(name, email, businessName)=>{
     <!-- Header -->
     <tr>
       <td align="center" style="background:linear-gradient(90deg,#0028AE,#00A6FA); padding:20px;">
-        <h1 style="margin:0; font-family:Poppins, Arial, sans-serif; font-size:24px; color:#FFFFFF;">QuickInvoice NG</h1>
+        <h1 style="margin:0; font-family:Poppins, Arial, sans-serif; font-size:24px; color:#FFFFFF;">QuickInvoice</h1>
       </td>
     </tr>
 
