@@ -17,6 +17,9 @@ const logisticRoutes = require('./routes/logisticsRoutes')
 const shipbubbleRoute = require('./routes/shipbubbleWebhook')
 const vendorRoute = require('./routes/vendorRoutes')
 const marketProducts = require('./routes/marketProductRoutes')
+const expensesRoutes = require("./routes/expenses")
+
+
 const startInvoiceReminderCron = require('./utils/invoiceCron')
 const startSubscriptionExpiryCron = require('./utils/subscriptionExpiryCron')
 
@@ -227,6 +230,7 @@ app.use("/api/clients", clientRoutes);
 app.use("/api/reports", reportsRoute)
 app.use('/api/bvn', verifyBvn)
 app.use('/api/transaction-pin', transactionPin)
+app.use("/api/expenses", expensesRoutes)
 
 app.use('/api/deliveries', deliveryRoutes)
 
