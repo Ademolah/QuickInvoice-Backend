@@ -43,6 +43,8 @@ router.post("/", auth, trackActivity, async (req, res) => {
       active: active !== undefined ? !!active : true,
     };
     const product = await Product.create(payload);
+
+    console.log(`Product added to inventory: ${product._id} by user: ${user.businessName}`)
     res.status(201).json(product);
   } catch (err) {
     if (err?.code === 11000) {

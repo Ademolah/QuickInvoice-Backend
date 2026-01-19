@@ -9,6 +9,8 @@ exports.createExpense = async (req, res) => {
       ...req.body,
       userId: req.userId,
     });
+
+    console.log(`Expense recorded: ${expense._id} by user: ${req.userId}`)
     res.status(201).json({
       success: true,
       expense,
