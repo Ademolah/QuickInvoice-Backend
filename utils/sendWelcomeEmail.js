@@ -66,7 +66,7 @@ const sendWelcomeEmail = async(name, email, businessName)=>{
     <!-- Footer -->
     <tr>
       <td align="center" style="padding:20px; font-size:13px; color:#6B7280; background:#F9FAFB;">
-        © 2025 QuickInvoice NG. All rights reserved.
+        © 2026 QuickInvoice. All rights reserved.
       </td>
     </tr>
   </table>
@@ -76,7 +76,7 @@ const sendWelcomeEmail = async(name, email, businessName)=>{
        `,
     });
 
-    console.log("✅ Welcome email sent via Resend", info.messageId );
+    console.log(`✅ Welcome email sent via Resend to ${name}`);
     // console.log("Message sent:", info.messageId);
     })();
     } catch (error) {
