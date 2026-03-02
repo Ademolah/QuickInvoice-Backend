@@ -18,6 +18,7 @@ const shipbubbleRoute = require('./routes/shipbubbleWebhook')
 const vendorRoute = require('./routes/vendorRoutes')
 const marketProducts = require('./routes/marketProductRoutes')
 const expensesRoutes = require("./routes/expenses")
+const notificationRoutes = require('./routes/notificationRoutes')
 
 
 const startInvoiceReminderCron = require('./utils/invoiceCron')
@@ -258,6 +259,9 @@ app.use("/api/shipbubble", shipbubbleRoute)
 app.use('/api/sandbox', require('./routes/sandboxWebhookShip'))
 
 app.use('/api/vendor', vendorRoute)
+
+//notification
+app.use("/api/notifications", notificationRoutes)
 
 
 
