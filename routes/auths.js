@@ -6,6 +6,7 @@ const sendWelcomeEmail = require('../utils/sendWelcomeEmail')
 const Payments = require('../models/Payments')
 const axios = require("axios");
 const rateLimit = require("express-rate-limit");
+const Notification = require('../models/Notifications')
 
 
 
@@ -63,6 +64,14 @@ router.post("/register", async (req, res) => {
     );
     
 
+    // Trigger the Welcome Intelligence
+    await Notification.create({
+      userId: newUser._id,
+      type: 'SYSTEM',
+      title: 'Welcome to QuickInvoice! 🚀',
+      message: 'Your workspace is ready. You have 15 free invoice slots this month. Need help? Click "Manage Subscription" to see Pro benefits.',
+      createdAt: new Date()
+    });
 
     await sendWelcomeEmail(name, email, businessName)
 

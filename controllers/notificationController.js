@@ -48,6 +48,28 @@ exports.getUserNotifications = async (req, res) => {
 };
 
 exports.markAsRead = async (req, res) => {
-  await Notification.updateMany({ userId: req.user.id }, { isRead: true });
+  await Notification.updateMany({ userId: req.userId }, { isRead: true });
   res.json({ success: true });
+};
+
+exports.markAsRead = async (req, res) => {
+  try {
+    const { id } = req.params; // Look for the ID in the URL
+    
+    if (id) {
+      // Logic for clicking the checkmark on ONE notification
+      await Notification.findByIdAndUpdate(id, { isRead: true });
+    } else {
+      // Logic for clicking "Clear All"
+      await Notification.updateMany(
+        { userId: req.user.id, isRead: false }, 
+        { isRead: true }
+      );
+    }
+    
+    res.json({ success: true });
+  } catch (err) {
+    console.error("Mark Read Error:", err);
+    res.status(500).json({ message: 'Error updating notifications' });
+  }
 };

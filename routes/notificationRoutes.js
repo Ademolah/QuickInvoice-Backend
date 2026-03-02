@@ -10,6 +10,6 @@ router.use(auth);
 router.get('/', notificationController.getUserNotifications);
 
 // PUT: /api/notifications/read - Marks all as read when the bell is clicked
-router.put('/read', notificationController.markAsRead);
+router.put('/read/', notificationController.markAsRead);
 
 module.exports = router;
