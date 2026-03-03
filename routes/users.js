@@ -2,19 +2,19 @@ const express = require('express');
 const User = require('../models/Users'); // Assuming you have a User model
 const auth = require('../middleware/authMiddleware');
 const { updateAccountDetails, updatePickupAddress, getVendorSlug } = require('../controllers/usersController')
-const {changePassword} = require('../controllers/usersController')
+const { changePassword } = require('../controllers/usersController')
 const axios = require('axios')
 const asyncHandler = require('express-async-handler')
 const upload = require('../middleware/upload')
 const cloudinary = require('../utils/cloudinary')
 const trackActivity = require('../middleware/trackActivity')
-const Transactions = require('../models/Transactions')
+const Transactions = require('../models/Transaction')
 
 
 const router = express.Router();
 
 // Get current logged-in user info
-router.get('/me', auth,trackActivity, async (req, res) => {
+router.get('/me', auth, trackActivity, async (req, res) => {
   try {
     // const user = await User.findById(req.user.id).select('businessName email');
     const user = await User.findById(req.user.id)
@@ -27,12 +27,12 @@ router.get('/me', auth,trackActivity, async (req, res) => {
 });
 
 // In your userRoutes.js or wherever your routes are defined
-router.get("/account-details", auth,trackActivity, async (req, res) => {
+router.get("/account-details", auth, trackActivity, async (req, res) => {
   try {
     const userId = req.user.id; // Assuming you have auth middleware
     const user = await User.findById(userId).select("accountDetails");
     // console.log(user);
-    
+
 
     if (!user) {
       return res.status(404).json({ message: "User not found" });
@@ -47,7 +47,7 @@ router.get("/account-details", auth,trackActivity, async (req, res) => {
 
 // Initialize payment
 router.post("/initialize", auth, async (req, res) => {
-  const { email } = req.user; 
+  const { email } = req.user;
   try {
     const response = await axios.post("https://api.paystack.co/transaction/initialize", {
       email,
@@ -82,63 +82,63 @@ router.get("/verify/:reference", auth, async (req, res) => {
   }
 });
 
-router.post('/avatar',auth,trackActivity, upload.single('image'),asyncHandler(async (req, res) => {
-    if (!req.file) {
-      return res.status(400).json({ message: 'No image file provided' });
-    }
-    const user = await User.findById(req.userId);
-    if (!user) return res.status(404).json({ message: 'User not found' });
-    // Upload to Cloudinary via upload_stream to avoid writing to disk
-    const bufferStreamUpload = (buffer) =>
-      new Promise((resolve, reject) => {
-        const stream = cloudinary.uploader.upload_stream(
-          {
-            folder: `quickinvoice_ng/avatars`, // optional folder
-            transformation: [
-              { width: 800, height: 800, crop: "limit" }, // limit size
-              { quality: "auto" }
-            ],
-            format: 'png', // normalize format (optional)
-          },
-          (error, result) => {
-            if (error) return reject(error);
-            resolve(result);
-          }
-        );
-        stream.end(buffer);
-      });
-    // If user already has a public id -> try deleting old image (best effort)
-    if (user.avatarPublicId) {
-      try {
-        await cloudinary.uploader.destroy(user.avatarPublicId);
-      } catch (err) {
-        console.warn('Failed to delete previous avatar from Cloudinary', err.message || err);
-      }
-    }
-    // Upload new image
-    const result = await bufferStreamUpload(req.file.buffer);
-    // Save URL and public_id to user
-    user.avatar = result.secure_url;
-    user.avatarPublicId = result.public_id;
-    await user.save();
-
-    console.log(`Image uploaded successfully for ${user.name}`);
-    
-    res.json({
-      message: 'Avatar uploaded successfully',
-      avatar: user.avatar,
-      avatarPublicId: user.avatarPublicId,
+router.post('/avatar', auth, trackActivity, upload.single('image'), asyncHandler(async (req, res) => {
+  if (!req.file) {
+    return res.status(400).json({ message: 'No image file provided' });
+  }
+  const user = await User.findById(req.userId);
+  if (!user) return res.status(404).json({ message: 'User not found' });
+  // Upload to Cloudinary via upload_stream to avoid writing to disk
+  const bufferStreamUpload = (buffer) =>
+    new Promise((resolve, reject) => {
+      const stream = cloudinary.uploader.upload_stream(
+        {
+          folder: `quickinvoice_ng/avatars`, // optional folder
+          transformation: [
+            { width: 800, height: 800, crop: "limit" }, // limit size
+            { quality: "auto" }
+          ],
+          format: 'png', // normalize format (optional)
+        },
+        (error, result) => {
+          if (error) return reject(error);
+          resolve(result);
+        }
+      );
+      stream.end(buffer);
     });
-  })
+  // If user already has a public id -> try deleting old image (best effort)
+  if (user.avatarPublicId) {
+    try {
+      await cloudinary.uploader.destroy(user.avatarPublicId);
+    } catch (err) {
+      console.warn('Failed to delete previous avatar from Cloudinary', err.message || err);
+    }
+  }
+  // Upload new image
+  const result = await bufferStreamUpload(req.file.buffer);
+  // Save URL and public_id to user
+  user.avatar = result.secure_url;
+  user.avatarPublicId = result.public_id;
+  await user.save();
+
+  console.log(`Image uploaded successfully for ${user.name}`);
+
+  res.json({
+    message: 'Avatar uploaded successfully',
+    avatar: user.avatar,
+    avatarPublicId: user.avatarPublicId,
+  });
+})
 );
 
-router.put("/complete-profile" , auth,trackActivity, async (req, res)  => {
+router.put("/complete-profile", auth, trackActivity, async (req, res) => {
   try {
     // const userId = req.params.id;
     const userId = req.userId
     const { nationality, date_of_birth, residential_address, occupation } = req.body;
     // Validate input (optional strict validation)
-    if (!nationality || !date_of_birth || !residential_address || !occupation ) {
+    if (!nationality || !date_of_birth || !residential_address || !occupation) {
       return res.status(400).json({ message: "All fields are required." });
     }
     const updatedUser = await User.findByIdAndUpdate(
@@ -165,7 +165,7 @@ router.put("/complete-profile" , auth,trackActivity, async (req, res)  => {
 });
 
 
-router.post("/verify-nin", auth,trackActivity, async (req, res) => {
+router.post("/verify-nin", auth, trackActivity, async (req, res) => {
   try {
     const { nin } = req.body;
     if (!nin) {
@@ -175,7 +175,7 @@ router.post("/verify-nin", auth,trackActivity, async (req, res) => {
     const userId = req.userId
     const user = await User.findById(userId);
     if (!user) return res.status(404).json({ message: "User not found" });
-    
+
     // Call Dojah API
     const response = await axios.get(
       `${process.env.DOJAH_BASE_URL}/api/v1/kyc/nin/advance`,
@@ -235,8 +235,8 @@ module.exports = router;
 
 
 
-router.put('/account-details', auth,trackActivity, updateAccountDetails);
-router.put('/change-password', auth,trackActivity, changePassword);
+router.put('/account-details', auth, trackActivity, updateAccountDetails);
+router.put('/change-password', auth, trackActivity, changePassword);
 router.put('/pickup-address', auth, trackActivity, updatePickupAddress)
 router.get("/vendor/:id", getVendorSlug);
 

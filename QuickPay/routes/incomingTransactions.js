@@ -2,7 +2,7 @@
 // routes/anchorRoutes.js
 const express = require("express");
 const router = express.Router();
-const Transaction = require("../../models/Transactions");
+const Transaction = require("../../models/Transaction");
 const User = require("../../models/Users");
 const verifyAnchorSignature = require('../../middleware/verifyAnchorSignature')
 const sendCreditAlert = require('../../utils/sendCreditAlert')
@@ -53,8 +53,8 @@ router.post("/transaction-webhook", verifyAnchorSignature, async (req, res) => {
 
     // ✅  Find user by anchor customer ID Find user by Anchor accountId
     const user = await User.findOne({
-        "anchor.account.id": accountId,
-      });
+      "anchor.account.id": accountId,
+    });
 
     if (!user) {
       console.error("User not found for accountId:", accountId);
@@ -77,7 +77,7 @@ router.post("/transaction-webhook", verifyAnchorSignature, async (req, res) => {
       accountId: accountId,
       currency: currency || "NGN",
       // transactionReference: reference || null,
-      transactionReference: reference || `${Date.now()}-${Math.floor(Math.random()) }`,
+      transactionReference: reference || `${Date.now()}-${Math.floor(Math.random())}`,
       transactionStatus:
         status === "COMPLETED" ? "COMPLETED" : "PENDING",
       accountBalance: availableBalance,

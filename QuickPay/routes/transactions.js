@@ -1,6 +1,6 @@
 const express = require("express");
 const authMiddleware = require("../../middleware/authMiddleware");
-const Transaction = require("../../models/Transactions");
+const Transaction = require("../../models/Transaction");
 const bcrypt = require("bcrypt");
 const User = require("../../models/Users");
 const router = express.Router();
@@ -11,7 +11,7 @@ const sendDebitAlert = require('../../utils/sendDebitAlert')
 const trackActivity = require('../../middleware/trackActivity')
 
 
-router.post("/verifyPin", authMiddleware,trackActivity, async (req, res) => {
+router.post("/verifyPin", authMiddleware, trackActivity, async (req, res) => {
   try {
     const { pin } = req.body;
     // Basic validation
@@ -21,9 +21,9 @@ router.post("/verifyPin", authMiddleware,trackActivity, async (req, res) => {
 
     // Frontend might send a number; convert to string
     const pinString = String(pin);
-    
+
     const userId = req.userId
-    
+
     if (!userId) {
       return res.status(401).json({ message: "Unauthorized" });
     }
@@ -33,7 +33,7 @@ router.post("/verifyPin", authMiddleware,trackActivity, async (req, res) => {
       return res.status(404).json({ message: "Transaction PIN not set, Set PIN in 'Settings' " });
     }
 
-    
+
     const isMatch = await bcrypt.compare(pinString, user.transactionPin);
     if (!isMatch) {
       return res.status(400).json({ message: "Incorrect PIN" });
@@ -75,7 +75,7 @@ router.get("/banks", async (req, res) => {
 
 //verify account
 
-router.get("/verify-account/:bankCode/:accountNumber", authMiddleware,trackActivity, async (req, res) => {
+router.get("/verify-account/:bankCode/:accountNumber", authMiddleware, trackActivity, async (req, res) => {
   try {
     const { bankCode, accountNumber } = req.params;
     if (!bankCode || !accountNumber) {
@@ -110,7 +110,7 @@ router.get("/verify-account/:bankCode/:accountNumber", authMiddleware,trackActiv
 });
 
 
-router.post("/create-counterparty", authMiddleware,trackActivity, async (req, res) => {
+router.post("/create-counterparty", authMiddleware, trackActivity, async (req, res) => {
   try {
     const { bankCode, accountName, accountNumber } = req.body;
     const response = await axios.post(
@@ -144,7 +144,7 @@ router.post("/create-counterparty", authMiddleware,trackActivity, async (req, re
   }
 });
 
-router.post("/initiate-transfer", authMiddleware,trackActivity, async (req, res) => {
+router.post("/initiate-transfer", authMiddleware, trackActivity, async (req, res) => {
   try {
     const {
       amount,
@@ -155,7 +155,7 @@ router.post("/initiate-transfer", authMiddleware,trackActivity, async (req, res)
     } = req.body;
 
 
-    if(!counterPartyId){
+    if (!counterPartyId) {
       return res.status(400).json({ message: "counterPartyId is required" });
     }
 
@@ -170,7 +170,7 @@ router.post("/initiate-transfer", authMiddleware,trackActivity, async (req, res)
     // }
 
     const accountId = user?.anchor?.account?.id
-    if(!accountId){
+    if (!accountId) {
       return res.status(400).json({ message: "User does not have a valid DepositAccount" });
     }
 
@@ -218,7 +218,7 @@ router.post("/initiate-transfer", authMiddleware,trackActivity, async (req, res)
   }
 });
 
-router.get("/history", authMiddleware,trackActivity, async (req, res) => {
+router.get("/history", authMiddleware, trackActivity, async (req, res) => {
   try {
     const userId = req.userId;
 
@@ -356,7 +356,7 @@ router.post("/webhook/anchor-transfer", verifyAnchorSignature, async (req, res) 
 
       console.log("✅ Transaction Document Created Successfully");
       try {
-        sendDebitAlert(amount, sourceBank?.name, user.email, sourceAccountName, user.name, sourceAccountNumber, new Date().toLocaleString(), reference, description )
+        sendDebitAlert(amount, sourceBank?.name, user.email, sourceAccountName, user.name, sourceAccountNumber, new Date().toLocaleString(), reference, description)
       } catch (error) {
         error("❌ Failed to send debit alert email:", error.message);
       }
