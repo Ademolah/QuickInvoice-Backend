@@ -23,52 +23,70 @@ function sendReminderEmail(user) {
 <html>
 <head>
   <meta charset="UTF-8" />
-  <title>Subscription Reminder</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Keep Your Intelligence Active</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;800&display=swap');
+    body { font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif !important; }
+    .feature-lock { border-left: 3px solid #E2E8F0; padding-left: 15px; margin-bottom: 15px; }
+  </style>
 </head>
-<body style="margin:0; padding:0; background-color:#F9FAFB; font-family:Inter, Arial, sans-serif; color:#4B5563;">
-  <table align="center" width="100%" cellpadding="0" cellspacing="0" style="max-width:600px; background:#FFFFFF; border-radius:12px; box-shadow:0 4px 12px rgba(0,0,0,0.05); overflow:hidden;">
-    <!-- Header -->
+<body style="margin:0; padding:0; background-color:#F8FAFC; color:#1E293B;">
+  <table align="center" width="100%" cellpadding="0" cellspacing="0" style="max-width:600px; margin: 40px auto; background:#FFFFFF; border-radius:24px; overflow:hidden; border: 1px solid #E2E8F0; box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.05);">
+    
     <tr>
-      <td align="center" style="background:linear-gradient(90deg,#0046A5,#00B86B); padding:20px;">
-        <h1 style="margin:0; font-family:Poppins, Arial, sans-serif; font-size:24px; color:#FFFFFF;">QuickInvoice NG</h1>
+      <td style="background:#0F172A; padding:20px 40px; text-align:center;">
+        <span style="color:#94A3B8; font-size:11px; font-weight:800; text-transform:uppercase; letter-spacing:2px;">Subscription Priority Notice</span>
       </td>
     </tr>
-    <!-- Body -->
+
     <tr>
-      <td style="padding:30px;">
-        <h2 style="font-family:Poppins, Arial, sans-serif; font-size:22px; margin:0; color:#0046A5;">
-          Subscription Expiring Soon ⌛
+      <td style="padding:40px;">
+        <h2 style="font-size:28px; font-weight:800; letter-spacing:-1px; margin:0; color:#0F172A; line-height:1.2;">
+          Don't lose your <span style="color:#0028AE;">Intelligence Suite</span>.
         </h2>
-        <p style="margin:16px 0; font-size:16px; line-height:1.6;">
-          Hi <strong>${user.name}</strong>,
+        <p style="margin:24px 0; font-size:16px; line-height:1.6; color:#475569;">
+          Hi ${user.name}, your Pro access for <strong>${user.businessName}</strong> is set to expire in <span style="color:#E11D48; font-weight:700;">4 days</span>. 
         </p>
-        <p style="margin:0 0 16px 0; font-size:16px; line-height:1.6;">
-          Your <strong>Pro subscription</strong> for <strong>${user.businessName}</strong> will expire in <strong>4 days</strong>.
-        </p>
-        <p style="margin:0 0 20px 0; font-size:16px; line-height:1.6;">
-          To avoid any interruption in your access to premium features, please renew your subscription today.
-        </p>
-        <div style="text-align:center; margin:30px 0;">
-          <a href="https://quickinvoiceng.com/billing"
-             style="display:inline-block; padding:12px 24px; background:#00B86B; color:#FFFFFF; text-decoration:none; border-radius:8px; font-size:16px; font-weight:600;">
-             Renew Now
-          </a>
+
+        <div style="background:#FFF1F2; border-radius:16px; padding:20px; margin:30px 0;">
+          <h3 style="margin:0 0 12px 0; font-size:14px; font-weight:800; color:#9F1239; text-transform:uppercase; letter-spacing:0.5px;">What happens next?</h3>
+          <p style="margin:0; font-size:14px; color:#BE123C; line-height:1.5;">
+            To maintain "World-Class" operations, a renewal is required. Without Pro, the following features will be paused:
+          </p>
+          <ul style="margin:12px 0 0 0; padding-left:20px; font-size:13px; color:#9F1239; line-height:1.8;">
+            <li><strong>Automated Bookkeeping & Ledger access</strong></li>
+            <li><strong>Real-time Inventory Synchronization</strong></li>
+            <li><strong>High-Fidelity PDF Exports</strong></li>
+            <li><strong>Unlimited Invoices & Receipts</strong></li>
+          </ul>
         </div>
-        <p style="margin:20px 0 0 0; font-size:15px; color:#6B7280;">
-          Thank you for choosing QuickInvoice NG — helping businesses grow smarter every day.
-        </p>
-        <p style="margin-top:8px; font-size:15px; color:#6B7280;">
-          Warm regards,<br/>
-          <strong>The QuickInvoice NG Team</strong>
+
+        <div style="text-align:center; margin:40px 0;">
+          <a href="https://quickinvoiceng.com/billing" 
+             style="display:inline-block; padding:18px 36px; background:#0028AE; color:#FFFFFF; text-decoration:none; border-radius:16px; font-size:16px; font-weight:700; box-shadow: 0 10px 15px -3px rgba(0, 40, 174, 0.2);">
+             Secure My Pro Status
+          </a>
+          <p style="margin-top:20px; font-size:12px; color:#94A3B8;">Fast, secure renewal via Paystack</p>
+        </div>
+
+        <p style="margin:0; font-size:14px; color:#64748B; border-top: 1px solid #F1F5F9; pt: 20px;">
+          If you have already renewed or updated your billing, please disregard this automated notice.
         </p>
       </td>
     </tr>
-    <!-- Footer -->
+
     <tr>
-      <td align="center" style="padding:20px; font-size:13px; color:#6B7280; background:#F9FAFB;">
-        © 2025 QuickInvoice NG. All rights reserved. <br/>
-        <a href="https://quickinvoiceng.com/privacy" style="color:#0046A5; text-decoration:none;">Privacy Policy</a> •
-        <a href="https://quickinvoiceng.com/terms" style="color:#0046A5; text-decoration:none;">Terms of Use</a>
+      <td align="center" style="padding:30px; background:#F8FAFC; color:#94A3B8; border-top: 1px solid #E2E8F0;">
+        <div style="height:32px; width:32px; background:#E2E8F0; border-radius:8px; display:inline-block; text-align:center; line-height:32px; margin-bottom:15px;">
+          <span style="color:#94A3B8; font-weight:800; font-size:16px; font-style:italic;">Q</span>
+        </div>
+        <p style="margin:0; font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:1px;">QuickInvoice NG • 2026</p>
+        <p style="margin:10px 0 0 0; font-size:11px;">
+          <a href="#" style="color:#64748B; text-decoration:none;">Billing Support</a> • 
+          <a href="#" style="color:#64748B; text-decoration:none;">Legal</a> • 
+          <a href="#" style="color:#64748B; text-decoration:none;">Privacy</a>
+        </p>
       </td>
     </tr>
   </table>

@@ -73,45 +73,103 @@ const buildEmail = (user, chartUrl, stats) => `
 <html>
 <head>
   <meta charset="UTF-8" />
-  <title>Monthly Summary Report</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Your Monthly Intelligence Brief</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;800&display=swap');
+    body { font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif !important; }
+  </style>
 </head>
-<body style="margin:0; padding:0; background-color:#F9FAFB; font-family:Inter, Arial, sans-serif; color:#4B5563;">
-  <table align="center" width="100%" cellpadding="0" cellspacing="0" style="max-width:600px; background:#FFFFFF; border-radius:12px; box-shadow:0 4px 12px rgba(0,0,0,0.05); overflow:hidden;">
-    <!-- Header -->
+<body style="margin:0; padding:0; background-color:#F8FAFC; color:#1E293B;">
+  <table align="center" width="100%" cellpadding="0" cellspacing="0" style="max-width:600px; margin: 40px auto; background:#FFFFFF; border-radius:32px; overflow:hidden; border: 1px solid #E2E8F0; box-shadow: 0 25px 50px -12px rgba(0, 40, 174, 0.08);">
+    
     <tr>
-      <td align="center" style="background:linear-gradient(90deg,#0046A5,#00B86B); padding:20px;">
-        <h1 style="margin:0; font-family:Poppins, Arial, sans-serif; font-size:24px; color:#FFFFFF;">QuickInvoice NG</h1>
+      <td style="padding:40px 40px 20px 40px;">
+        <table width="100%">
+          <tr>
+            <td>
+              <div style="height:36px; width:36px; background:#0028AE; border-radius:10px; display:inline-block; text-align:center; line-height:36px;">
+                <span style="color:#FFFFFF; font-weight:800; font-size:18px; font-style:italic;">Q</span>
+              </div>
+            </td>
+            <td align="right">
+              <span style="font-size:11px; font-weight:800; text-transform:uppercase; letter-spacing:1.5px; color:#94A3B8; background:#F1F5F9; padding:6px 12px; border-radius:20px;">
+                ${new Date(new Date().setMonth(new Date().getMonth() - 1)).toLocaleString("default", { month: "long", year: "numeric" })}
+              </span>
+            </td>
+          </tr>
+        </table>
       </td>
     </tr>
-    <!-- Body -->
+
     <tr>
-      <td style="padding:30px;">
-        <h2 style="font-family:Poppins, Arial, sans-serif; font-size:22px; margin:0; color:#0046A5;">Monthly Report Summary</h2>
-        <p style="margin:16px 0; font-size:16px; line-height:1.6;">
-          Hi <strong>${user.name}</strong>,<br/>
-          Here’s your performance summary for <b>${
-  new Date(new Date().setMonth(new Date().getMonth() - 1))
-    .toLocaleString("default", { month: "long" })
-}</b>:
-        </p>
-        <ul style="list-style:none; padding:0; font-size:15px; margin:20px 0;">
-          <li>🧾 Total Invoices Issued: <b>${stats.total}</b></li>
-          <li>💰 Total Paid: <b>${stats.paid}</b></li>
-          <li>📄 Unpaid Invoices: <b>${stats.unpaid}</b></li>
-          <li>💵 Total Revenue: <b>₦${stats.revenue.toLocaleString()}</b></li>
-        </ul>
-        <div style="text-align:center; margin:20px 0;">
-          <img src="${chartUrl}" alt="Monthly Chart" style="max-width:100%; border-radius:8px;" />
+      <td style="padding:0 40px;">
+        <h1 style="font-size:26px; font-weight:800; letter-spacing:-1px; margin:0; color:#0F172A;">Monthly Performance Brief</h1>
+        <p style="margin:12px 0 0 0; font-size:15px; color:#64748B;">Excellent work this month, ${user.name}. Here is how <strong>${user.businessName}</strong> performed.</p>
+      </td>
+    </tr>
+
+    <tr>
+      <td style="padding:30px 40px;">
+        <div style="background:linear-gradient(135deg, #0028AE 0%, #001A75 100%); border-radius:24px; padding:30px; text-align:center; color:#FFFFFF;">
+          <p style="margin:0; font-size:12px; font-weight:700; text-transform:uppercase; letter-spacing:2px; color:rgba(255,255,255,0.7);">Total Monthly Revenue</p>
+          <h2 style="margin:10px 0 0 0; font-size:42px; font-weight:800; letter-spacing:-2px;">₦${stats.revenue.toLocaleString()}</h2>
         </div>
-        <p style="margin:20px 0; font-size:15px;">
-          Keep up the great work! Continue growing your business with QuickInvoice NG 🚀.
-        </p>
       </td>
     </tr>
-    <!-- Footer -->
+
     <tr>
-      <td align="center" style="padding:20px; font-size:13px; color:#6B7280; background:#F9FAFB;">
-        © ${new Date().getFullYear()} QuickInvoice NG. All rights reserved.
+      <td style="padding:0 40px 30px 40px;">
+        <table width="100%" cellspacing="0" cellpadding="0">
+          <tr>
+            <td width="31%" style="background:#F8FAFC; border-radius:16px; padding:15px; text-align:center; border: 1px solid #F1F5F9;">
+              <p style="margin:0; font-size:10px; font-weight:800; color:#94A3B8; text-transform:uppercase;">Issued</p>
+              <p style="margin:5px 0 0 0; font-size:18px; font-weight:800; color:#1E293B;">${stats.total}</p>
+            </td>
+            <td width="3%"></td>
+            <td width="31%" style="background:#F0FDF4; border-radius:16px; padding:15px; text-align:center; border: 1px solid #DCFCE7;">
+              <p style="margin:0; font-size:10px; font-weight:800; color:#166534; text-transform:uppercase;">Paid</p>
+              <p style="margin:5px 0 0 0; font-size:18px; font-weight:800; color:#15803d;">${stats.paid}</p>
+            </td>
+            <td width="3%"></td>
+            <td width="31%" style="background:#FFF1F2; border-radius:16px; padding:15px; text-align:center; border: 1px solid #FFE4E6;">
+              <p style="margin:0; font-size:10px; font-weight:800; color:#9F1239; text-transform:uppercase;">Unpaid</p>
+              <p style="margin:5px 0 0 0; font-size:18px; font-weight:800; color:#BE123C;">${stats.unpaid}</p>
+            </td>
+          </tr>
+        </table>
+      </td>
+    </tr>
+
+    <tr>
+      <td style="padding:0 40px 40px 40px;">
+        <div style="border: 1px solid #F1F5F9; border-radius:24px; padding:20px; text-align:center;">
+          <h3 style="margin:0 0 20px 0; font-size:13px; font-weight:800; color:#475569; text-transform:uppercase; letter-spacing:1px; text-align:left;">Revenue Analytics</h3>
+          <img src="${chartUrl}" alt="Performance Chart" style="width:100%; border-radius:12px; display:block;" />
+        </div>
+      </td>
+    </tr>
+
+    <tr>
+      <td style="padding:0 40px 40px 40px; text-align:center;">
+        <a href="https://quickinvoiceng.com" 
+           style="display:inline-block; width:100%; box-sizing:border-box; padding:18px; background:#0F172A; color:#FFFFFF; text-decoration:none; border-radius:16px; font-size:15px; font-weight:700;">
+           View Full Intelligence Report
+        </a>
+      </td>
+    </tr>
+
+    <tr>
+      <td align="center" style="padding:40px; background:#F8FAFC; border-top: 1px solid #E2E8F0;">
+        <p style="margin:0; font-size:11px; font-weight:700; color:#94A3B8; text-transform:uppercase; letter-spacing:2px;">QuickInvoice Intelligence Suite</p>
+        <p style="margin:10px 0 0 0; font-size:11px; color:#94A3B8;">
+          You received this because you are an active Business Owner on our platform.
+        </p>
+        <div style="margin-top:20px; font-size:11px;">
+            <a href="#" style="color:#0028AE; text-decoration:none; font-weight:700;">Dashboard</a> • 
+            <a href="#" style="color:#0028AE; text-decoration:none; font-weight:700;">Support</a> • 
+            <a href="#" style="color:#0028AE; text-decoration:none; font-weight:700;">Unsubscribe</a>
+        </div>
       </td>
     </tr>
   </table>
