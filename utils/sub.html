@@ -2,41 +2,78 @@
 <html>
 <head>
   <meta charset="UTF-8" />
-  <title>Subscription Successful</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Welcome to the Pro Intelligence Tier</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;800&display=swap');
+    body { font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif !important; }
+  </style>
 </head>
-<body style="margin:0; padding:0; background-color:#F9FAFB; font-family:Inter, Arial, sans-serif; color:#4B5563;">
-  <table align="center" width="100%" cellpadding="0" cellspacing="0" style="max-width:600px; background:#FFFFFF; border-radius:12px; box-shadow:0 4px 12px rgba(0,0,0,0.05); overflow:hidden;">
-    <!-- Header -->
+<body style="margin:0; padding:0; background-color:#F8FAFC; color:#1E293B;">
+  <table align="center" width="100%" cellpadding="0" cellspacing="0" style="max-width:600px; margin: 40px auto; background:#FFFFFF; border-radius:32px; overflow:hidden; border: 1px solid #E2E8F0; box-shadow: 0 25px 50px -12px rgba(16, 185, 129, 0.1);">
+    
     <tr>
-      <td align="center" style="background:linear-gradient(90deg,#00B86B,#0046A5); padding:20px;">
-        <h1 style="margin:0; font-family:Poppins, Arial, sans-serif; font-size:24px; color:#FFFFFF;">QuickInvoice NG</h1>
+      <td style="background:#10B981; padding:12px 40px; text-align:center;">
+        <span style="color:#FFFFFF; font-size:10px; font-weight:800; text-transform:uppercase; letter-spacing:2px;">Elite Status Activated</span>
       </td>
     </tr>
 
-    <!-- Body -->
     <tr>
-      <td style="padding:30px;">
-        <h2 style="font-family:Poppins, Arial, sans-serif; font-size:22px; margin:0; color:#00B86B;">Subscription Successful 🎉</h2>
-        <p style="margin:16px 0; font-size:16px; line-height:1.6;">
-          Hi <strong>${name}</strong>,  
-          your subscription has been successfully activated with the email <strong>${email}</strong>.  
-        </p>
-
-        <p style="margin:20px 0; font-size:16px;">
-          You now have full access to all premium features of QuickInvoice NG. Start creating unlimited invoices today!
-        </p>
-
-        <a href="https://quickinvoice.ng/dashboard" 
-           style="display:inline-block; padding:12px 24px; background:#00B86B; color:#FFFFFF; text-decoration:none; border-radius:8px; font-size:16px; font-weight:600;">
-           Go to Dashboard
-        </a>
+      <td style="padding:40px 40px 0 40px; text-align:center;">
+        <div style="height:64px; width:64px; background:#ECFDF5; border-radius:20px; display:inline-block; text-align:center; line-height:64px; margin-bottom:24px;">
+          <span style="font-size:32px;">💎</span>
+        </div>
+        <h1 style="font-size:30px; font-weight:800; letter-spacing:-1.5px; margin:0; color:#0F172A; line-height:1.2;">
+          You are now <span style="color:#10B981;">Pro</span>.
+        </h1>
       </td>
     </tr>
 
-    <!-- Footer -->
     <tr>
-      <td align="center" style="padding:20px; font-size:13px; color:#6B7280; background:#F9FAFB;">
-        © 2025 QuickInvoice NG. All rights reserved.
+      <td style="padding:30px 40px 40px 40px;">
+        <p style="margin:0; font-size:16px; line-height:1.6; color:#475569; text-align:center;">
+          Hello ${name}, your intelligence upgrade is complete. Your business, <strong>${businessName || 'your organization'}</strong>, now has full access to the QuickInvoice elite toolset.
+        </p>
+
+        <table width="100%" style="margin:32px 0; background:#F8FAFC; border-radius:24px; padding:24px;">
+          <tr>
+            <td style="padding-bottom:16px;">
+              <div style="font-weight:700; color:#1E293B; font-size:15px;">✓ Automated Financial Ledger</div>
+              <div style="font-size:13px; color:#64748B;">Live Profit & Loss tracking for every transaction.</div>
+            </td>
+          </tr>
+          <tr>
+            <td style="padding-bottom:16px;">
+              <div style="font-weight:700; color:#1E293B; font-size:15px;">✓ Executive PDF Exports</div>
+              <div style="font-size:13px; color:#64748B;">High-fidelity, branded reports for banks and partners.</div>
+            </td>
+          </tr>
+          <tr>
+            <td>
+              <div style="font-weight:700; color:#1E293B; font-size:15px;">✓ Unlimited Operations</div>
+              <div style="font-size:13px; color:#64748B;">No caps on invoices, receipts, or client management.</div>
+            </td>
+          </tr>
+        </table>
+
+        <div style="text-align:center;">
+          <a href="https://quickinvoice.ng/dashboard" 
+             style="display:inline-block; padding:18px 36px; background:#0F172A; color:#FFFFFF; text-decoration:none; border-radius:18px; font-size:16px; font-weight:700; shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);">
+             Enter Your Dashboard
+          </a>
+          <p style="margin-top:24px; font-size:13px; color:#94A3B8;">
+            Billing associated with: <strong>${email}</strong>
+          </p>
+        </div>
+      </td>
+    </tr>
+
+    <tr>
+      <td align="center" style="padding:40px; background:#F8FAFC; border-top: 1px solid #E2E8F0;">
+        <p style="margin:0; font-size:11px; font-weight:700; color:#94A3B8; text-transform:uppercase; letter-spacing:2px;">QuickInvoice NG • 2026</p>
+        <p style="margin:10px 0 0 0; font-size:11px; color:#94A3B8;">
+          You are receiving this because your account was upgraded to the Pro tier.
+        </p>
       </td>
     </tr>
   </table>
