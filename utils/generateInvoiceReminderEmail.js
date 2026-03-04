@@ -91,7 +91,7 @@ function generateInvoiceReminderEmail({
       <td align="center" style="padding:30px; background:#F8FAFC; border-top: 1px solid #E2E8F0;">
         <p style="margin:0; font-size:10px; font-weight:700; color:#94A3B8; text-transform:uppercase; letter-spacing:2px;">QuickInvoice Intelligence</p>
         <p style="margin:10px 0 0 0; font-size:11px; color:#94A3B8;">
-          Lagos, Nigeria • Automated Cash Flow Tracking
+          Abuja, Nigeria • Automated Cash Flow Tracking
         </p>
       </td>
     </tr>

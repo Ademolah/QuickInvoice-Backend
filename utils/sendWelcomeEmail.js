@@ -115,7 +115,7 @@ const sendWelcomeEmail = async(name, email, businessName)=>{
     <tr>
       <td align="center" style="padding:30px; background:#0F172A; color:#64748B;">
         <p style="margin:0; font-size:12px; font-weight:600; letter-spacing:1px; text-transform:uppercase;">QuickInvoice Intelligence Suite</p>
-        <p style="margin:8px 0 0 0; font-size:11px;">Lagos, Nigeria • 2026 Edition</p>
+        <p style="margin:8px 0 0 0; font-size:11px;">Abuja, Nigeria • 2026 Edition</p>
         <div style="margin-top:20px;">
             <a href="#" style="color:#94A3B8; text-decoration:none; font-size:11px; margin:0 10px;">Privacy</a>
             <a href="#" style="color:#94A3B8; text-decoration:none; font-size:11px; margin:0 10px;">Terms</a>

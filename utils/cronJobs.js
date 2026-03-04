@@ -63,7 +63,7 @@ function sendReminderEmail(user) {
         </div>
 
         <div style="text-align:center; margin:40px 0;">
-          <a href="https://quickinvoiceng.com/billing" 
+          <a href="https://quickinvoiceng.com" 
              style="display:inline-block; padding:18px 36px; background:#0028AE; color:#FFFFFF; text-decoration:none; border-radius:16px; font-size:16px; font-weight:700; box-shadow: 0 10px 15px -3px rgba(0, 40, 174, 0.2);">
              Secure My Pro Status
           </a>
@@ -81,7 +81,7 @@ function sendReminderEmail(user) {
         <div style="height:32px; width:32px; background:#E2E8F0; border-radius:8px; display:inline-block; text-align:center; line-height:32px; margin-bottom:15px;">
           <span style="color:#94A3B8; font-weight:800; font-size:16px; font-style:italic;">Q</span>
         </div>
-        <p style="margin:0; font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:1px;">QuickInvoice NG • 2026</p>
+        <p style="margin:0; font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:1px;">QuickInvoice • 2026</p>
         <p style="margin:10px 0 0 0; font-size:11px;">
           <a href="#" style="color:#64748B; text-decoration:none;">Billing Support</a> • 
           <a href="#" style="color:#64748B; text-decoration:none;">Legal</a> • 
