@@ -42,6 +42,8 @@ const expenseSchema = new mongoose.Schema(
       type: Date,
       required: true,
     },
+    isRecurring: { type: Boolean, default: false },
+    isTaxDeductible: { type: Boolean, default: false },
     note: {
       type: String,
       trim: true,

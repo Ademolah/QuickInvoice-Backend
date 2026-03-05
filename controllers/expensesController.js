@@ -10,7 +10,9 @@ exports.createExpense = async (req, res) => {
       userId: req.userId,
     });
 
-    console.log(`Expense recorded: ${expense._id} by user: ${req.userId}`)
+    // Helpful for debugging the new fields
+    console.log(`Expense Record: ${expense.title} | Taxable: ${expense.isTaxDeductible} | Recurring: ${expense.isRecurring}`);
+    
     res.status(201).json({
       success: true,
       expense,
