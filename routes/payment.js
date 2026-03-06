@@ -44,29 +44,6 @@ router.post('/initialize', protect, async (req, res) => {
 });
 
 
-// router.post('/initialize', protect, async (req, res) => {
-//   try {
-//     const userId = req.userId || req.user.id;
-//     const user = await User.findById(userId);
-//     if (!user) return res.status(404).json({ message: 'User not found' });
-
-//     const response = await axios.post('https://api.paystack.co/transaction/initialize', {
-//       email: user.email,
-//       amount: PLAN_PRICE, // in kobo
-//       callback_url: `https://www.quickinvoiceng.com/billing`, // customer returns here
-//       metadata: { userId } // save user id to metadata for verify
-//     }, {
-//       headers: { Authorization: `Bearer ${PAYSTACK_SECRET}` }
-//     });
-
-//     // respond with authorization url and reference
-//     return res.json({ status: true, data: response.data.data });
-//   } catch (err) {
-//     console.error('Paystack initialize error', err.response?.data || err.message);
-//     return res.status(500).json({ status: false, message: 'Payment init failed' });
-//   }
-// });
-
 // verify transaction and upgrade user
 router.get('/verify/:reference', protect, async (req, res) => {
   try {
@@ -104,100 +81,6 @@ router.get('/verify/:reference', protect, async (req, res) => {
     return res.status(500).json({ success: false, message: 'Verification error' });
   }
 });
-
-/**
- * Paystack webhook - recommended to use for automatic handling.
- * Important: use express.raw middleware on this route (see server setup).
- */
-
-
-// router.post(
-//   '/webhook',
-//   express.raw({ type: 'application/json' }),
-//   async (req, res) => {
-//     try {
-//       // ✅ Verify signature
-//       const paystackSignature = req.headers['x-paystack-signature'];
-//       const payload = req.body.toString(); // raw body buffer to string
-//       const expected = crypto
-//         .createHmac('sha512', PAYSTACK_SECRET)
-//         .update(payload)
-//         .digest('hex');
-
-//       if (paystackSignature !== expected) {
-//         console.warn('❌ Invalid Paystack signature');
-//         return res.status(400).send('Invalid signature');
-//       }
-
-//       // ✅ Parse event
-//       let event;
-//       try {
-//         event = JSON.parse(payload);
-//       } catch (e) {
-//         console.error('❌ Invalid JSON payload from Paystack', e);
-//         return res.status(400).send('Invalid JSON');
-//       }
-
-//       const eventType = event.event;
-
-//       // ✅ Handle payment success events
-//       if (eventType === 'charge.success' || eventType === 'transaction.success') {
-//         const tx = event.data;
-//         const userId = tx.metadata?.userId;
-
-//         if (userId) {
-//           const user = await User.findById(userId);
-//           if (user) {
-
-
-//             const now = new Date();
-//             const currentExpiry =
-//               user.proExpires && user.proExpires > now
-//                 ? new Date(user.proExpires)
-//                 : now;
-
-//             user.plan = 'pro';
-
-            
-//             user.proExpires = new Date(
-//               currentExpiry.getTime() + 30 * 24 * 60 * 60 * 1000
-//             ); // +30 days
-            
-//             // const now = new Date();
-
-//             // const currentExpiry =
-//             // user.proExpires && new Date(user.proExpires) > now
-//             //     ? new Date(user.proExpires)
-//             //     : now;
-
-//             // user.plan = 'pro';
-
-//             // user.proExpires = new Date(
-//             // currentExpiry.getTime() + 30 * 24 * 60 * 60 * 1000
-//             // ); // +30 days
-
-
-
-//             await user.save();
-
-//             await sendSubscriptionEmail(user.name, user.email)
-//             console.log(`✅ User ${user.email} upgraded to Pro until ${user.proExpires}`);
-//           } else {
-//             console.warn(`⚠️ User not found for userId: ${userId}`);
-//           }
-//         } else {
-//           console.warn('⚠️ No userId found in transaction metadata');
-//         }
-//       }
-
-//       // ✅ Always return 200 fast so Paystack doesn’t retry
-//       return res.status(200).json({ received: true });
-//     } catch (err) {
-//       console.error('🔥 Webhook error', err);
-//       return res.status(500).send('Server error');
-//     }
-//   }
-// );
 
 
 
@@ -245,7 +128,7 @@ router.post(
           user.plan = "pro";
           user.proExpires = new Date(currentExpiry.getTime() + 30 * 24 * 60 * 60 * 1000);
           await user.save();
-          await sendSubscriptionEmail(user.name, user.email);
+          await sendSubscriptionEmail(user.name, user.email, user.businessName);
           console.log("✔️ Subscription upgraded for", user.email);
         }
         return res.status(200).send("Subscription handled");

@@ -1,7 +1,7 @@
 const nodemailer = require("nodemailer");
 
 
-const sendWelcomeEmail = async(name, email)=>{
+const sendSubscriptionEmail = async(name, email, businessName)=>{
     // const owner = await User.findById(slot.userId)
         
     // console.log(owner.email);
@@ -138,4 +138,4 @@ const sendWelcomeEmail = async(name, email)=>{
 
 }
 
-module.exports = sendWelcomeEmail
+module.exports = sendSubscriptionEmail
