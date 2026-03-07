@@ -1,4 +1,5 @@
 const Expense = require("../models/Expenses");
+const mongoose = require("mongoose");
 
 /**
  * CREATE EXPENSE
@@ -94,5 +95,39 @@ exports.getExpensesByMonth = async (req, res) => {
       success: false,
       message: "Failed to fetch expenses by month",
     });
+  }
+};
+
+
+// exports.getExpenseStats
+exports.getExpenseStats = async (req, res) => {
+  try {
+    // CRITICAL: Ensure we are using 'new mongoose.Types.ObjectId'
+    const stats = await Expense.aggregate([
+      { 
+        $match: { 
+          userId: new mongoose.Types.ObjectId(req.userId) 
+        } 
+      },
+      {
+        $group: {
+          _id: null,
+          totalAmount: { $sum: "$amount" },
+          taxableAmount: {
+            $sum: { $cond: [{ $eq: ["$isTaxDeductible", true] }, "$amount", 0] }
+          }
+        }
+      }
+    ]);
+
+    const result = stats.length > 0 ? stats[0] : { totalAmount: 0, taxableAmount: 0 };
+
+    res.status(200).json({
+      success: true,
+      data: result
+    });
+  } catch (error) {
+    console.error("Aggregation Error:", error);
+    res.status(500).json({ success: false, message: "Internal Server Error" });
   }
 };
