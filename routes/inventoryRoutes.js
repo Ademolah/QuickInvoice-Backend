@@ -44,7 +44,7 @@ router.post("/", auth, trackActivity, async (req, res) => {
     };
     const product = await Product.create(payload);
 
-    console.log(`Product added to inventory: ${product._id} by user: ${user.businessName}`)
+    console.log(`Product added to inventory: ${product._id}`)
     res.status(201).json(product);
   } catch (err) {
     if (err?.code === 11000) {
