@@ -360,9 +360,7 @@ router.post("/log", auth, checkUsage,trackActivity, async (req, res) => {
 
     await user.save()
     
- 
 
-    // ✅ Always return JSON so frontend doesn’t choke
     res.json({ success: true, usage: user.usage });
   } catch (err) {
     console.error("Error logging usage:", err);

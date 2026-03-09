@@ -1,66 +1,111 @@
 const User = require('../models/Users')
 
 
-const checkUsage= async (req, res, next) => {
-    try {
-      const userId = req.userId || req.user.id;
-      const user = await User.findById(userId);
-      if (!user) return res.status(404).json({ message: 'User not found' });
+// const checkUsage= async (req, res, next) => {
+//     try {
+//       const userId = req.userId || req.user.id;
+//       const user = await User.findById(userId);
+//       if (!user) return res.status(404).json({ message: 'User not found' });
 
-      // Reset monthly usage if new month
-      // const now = new Date();
-      // if (!user.usage) user.usage = { invoicesThisMonth:0, receiptsThisMonth:0, lastReset: now };
-      // if (new Date(user.usage.lastReset).getMonth() !== now.getMonth()) {
-      //   user.usage.invoicesThisMonth = 0;
-      //   user.usage.receiptsThisMonth = 0;
-      //   user.usage.lastReset = now;
-      //   await user.save();
-      // }
+//       // Reset monthly usage if new month
+//       // const now = new Date();
+//       // if (!user.usage) user.usage = { invoicesThisMonth:0, receiptsThisMonth:0, lastReset: now };
+//       // if (new Date(user.usage.lastReset).getMonth() !== now.getMonth()) {
+//       //   user.usage.invoicesThisMonth = 0;
+//       //   user.usage.receiptsThisMonth = 0;
+//       //   user.usage.lastReset = now;
+//       //   await user.save();
+//       // }
 
-      const now = new Date();
-      if (!user.usage) {
-        user.usage = { invoicesThisMonth: 0, receiptsThisMonth: 0, lastReset: now };
-      }
+//       const now = new Date();
+//       if (!user.usage) {
+//         user.usage = { invoicesThisMonth: 0, receiptsThisMonth: 0, lastReset: now };
+//       }
 
-      // ✅ Rolling 30-day reset logic
-      const lastReset = new Date(user.usage.lastReset || now);
-      const daysSinceReset = (now - lastReset) / (1000 * 60 * 60 * 24); // in days
-      if (daysSinceReset >= 30) {
-        user.usage.invoicesThisMonth = 0;
-        user.usage.receiptsThisMonth = 0;
-        user.usage.lastReset = now;
-        await user.save();
-      }
+//       // ✅ Rolling 30-day reset logic
+//       const lastReset = new Date(user.usage.lastReset || now);
+//       const daysSinceReset = (now - lastReset) / (1000 * 60 * 60 * 24); // in days
+//       if (daysSinceReset >= 30) {
+//         user.usage.invoicesThisMonth = 0;
+//         user.usage.receiptsThisMonth = 0;
+//         user.usage.lastReset = now;
+//         await user.save();
+//       }
 
-      // check pro expiry
-      // if (user.plan === 'pro') {
-      //   if (user.proExpires && new Date(user.proExpires) > now) {
-      //     return next(); // still pro
-      //   } else {
-      //     // downgrade if expired
-      //     user.plan = 'free';
-      //     user.proExpires = null;
-      //     await user.save();
-      //   }
-      // }
+//       // check pro expiry
+//       // if (user.plan === 'pro') {
+//       //   if (user.proExpires && new Date(user.proExpires) > now) {
+//       //     return next(); // still pro
+//       //   } else {
+//       //     // downgrade if expired
+//       //     user.plan = 'free';
+//       //     user.proExpires = null;
+//       //     await user.save();
+//       //   }
+//       // }
 
-      // now user.plan is 'free'
-      const totalUsage = (user.usage.invoicesThisMonth || 0) + (user.usage.receiptsThisMonth || 0);
-      // const LIMIT = 15;
-      const LIMIT = 50;
-      if (totalUsage >= LIMIT) {
-        return res.status(403).json({ message: 'Free plan limit reached. Upgrade to Pro.' });
-      }
+//       // now user.plan is 'free'
+//       const totalUsage = (user.usage.invoicesThisMonth || 0) + (user.usage.receiptsThisMonth || 0);
+//       const LIMIT = 15;
+//       if (totalUsage >= LIMIT) {
+//         return res.status(403).json({ message: 'Free plan limit reached. Upgrade to Pro.' });
+//       }
 
-      next();
-    } catch (err) {
-      console.error('checkUsage error', err);
-      res.status(500).json({ message: 'Server error' });
+//       next();
+//     } catch (err) {
+//       console.error('checkUsage error', err);
+//       res.status(500).json({ message: 'Server error' });
+//     }
+//   };
+
+
+const checkUsage = async (req, res, next) => {
+  try {
+    const userId = req.userId || req.user.id;
+    const user = await User.findById(userId);
+    if (!user) return res.status(404).json({ message: 'User not found' });
+
+    const now = new Date();
+
+    // 1. ✅ THE FIX: PRO BYPASS
+    // If the user is on the Pro plan, we skip the limit check entirely.
+    if (user.plan === 'pro') {
+      return next(); 
     }
-  };
 
+    // 2. Initialize usage if it doesn't exist
+    if (!user.usage) {
+      user.usage = { invoicesThisMonth: 0, receiptsThisMonth: 0, lastReset: now };
+    }
 
-  module.exports = checkUsage
+    // 3. Rolling 30-day reset logic
+    const lastReset = new Date(user.usage.lastReset || now);
+    const daysSinceReset = (now - lastReset) / (1000 * 60 * 60 * 24); 
+    if (daysSinceReset >= 30) {
+      user.usage.invoicesThisMonth = 0;
+      user.usage.receiptsThisMonth = 0;
+      user.usage.lastReset = now;
+      await user.save();
+    }
+
+    // 4. Limit Check (Only reached by non-pro users)
+    const totalUsage = (user.usage.invoicesThisMonth || 0) + (user.usage.receiptsThisMonth || 0);
+    const LIMIT = 15;
+    
+    if (totalUsage >= LIMIT) {
+      return res.status(403).json({ 
+        message: 'Free plan limit reached. Upgrade to Pro for unlimited downloads.' 
+      });
+    }
+
+    next();
+  } catch (err) {
+    console.error('checkUsage error', err);
+    res.status(500).json({ message: 'Server error' });
+  }
+};
+
+module.exports = checkUsage
 
 
 
