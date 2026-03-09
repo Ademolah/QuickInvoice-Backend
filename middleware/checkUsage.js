@@ -46,7 +46,8 @@ const checkUsage= async (req, res, next) => {
 
       // now user.plan is 'free'
       const totalUsage = (user.usage.invoicesThisMonth || 0) + (user.usage.receiptsThisMonth || 0);
-      const LIMIT = 15;
+      // const LIMIT = 15;
+      const LIMIT = 50;
       if (totalUsage >= LIMIT) {
         return res.status(403).json({ message: 'Free plan limit reached. Upgrade to Pro.' });
       }
