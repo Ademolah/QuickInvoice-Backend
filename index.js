@@ -20,6 +20,7 @@ const marketProducts = require('./routes/marketProductRoutes')
 const expensesRoutes = require("./routes/expenses")
 const notificationRoutes = require('./routes/notificationRoutes')
 const bookKeepingRoutes = require('./routes/bookKeepingRoutes')
+const enterpriseRoutes = require('./routes/enterprise')
 
 
 const startInvoiceReminderCron = require('./utils/invoiceCron')
@@ -195,7 +196,7 @@ connectDb()
 const allowedOrigins = [
   "https://www.quickinvoiceng.com",
   "https://quickinvoiceng.com", 
-  //  "http://localhost:3000",
+   "http://localhost:3000",
   "https://quick-invoice-frontend-two.vercel.app",
   "https://test-quickinvoice-frontend.vercel.app",
   "https://www.test-quickinvoice-frontend.vercel.app"
@@ -265,6 +266,8 @@ app.use('/api/vendor', vendorRoute)
 app.use("/api/notifications", notificationRoutes)
 app.use('/api/bookkeeping', bookKeepingRoutes)
 
+//enterprise
+app.use('/api/enterprise', enterpriseRoutes)
 
 
 

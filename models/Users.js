@@ -65,7 +65,36 @@ slug: {
     default: null
   },
 
-plan: { type: String, enum: ["free", "pro"], default: "free" },
+plan: { type: String, enum: ["free", "pro", "enterprise"], default: "free" },
+
+//enterpriseBusiness
+
+enterpriseBusinesses: [{
+  businessName: { type: String, required: true },
+  slug: { type: String, unique: true },
+  logo: {
+    url: { type: String },
+    publicId: { type: String }
+  },
+  address: {
+    street: String,
+    city: String,
+    state: String
+  },
+  // Custom Branding for this specific business
+  branding: {
+    primaryColor: { type: String, default: "#0028AE" },
+    secondaryColor: { type: String, default: "#F8FAFC" },
+    templateId: { type: String, default: "classic" }
+  },
+  createdAt: { type: Date, default: Date.now }
+}],
+
+activeBusinessId: { 
+  type: mongoose.Schema.Types.ObjectId, 
+  default: null // null means they are using their "Main" account
+},
+
 usage: {
     invoicesThisMonth: { type: Number, default: 0 },
     receiptsThisMonth: { type: Number, default: 0 },
