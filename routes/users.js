@@ -14,12 +14,48 @@ const Transactions = require('../models/Transaction')
 const router = express.Router();
 
 // Get current logged-in user info
+// Get current logged-in user info
 router.get('/me', auth, trackActivity, async (req, res) => {
   try {
-    // const user = await User.findById(req.user.id).select('businessName email');
-    const user = await User.findById(req.user.id)
+    const user = await User.findById(req.user.id);
     if (!user) return res.status(404).json({ message: 'User not found' });
-    res.json(user);
+
+    // Convert to object so we can add virtual/computed fields
+    const userObj = user.toObject();
+
+    // 1. Determine the "Active Context"
+    // This tells the Frontend: "This is the business name/logo you should show right now"
+    let activeContext = {
+      id: null, // null means Main Account
+      businessName: user.businessName,
+      logo: user.avatar, 
+      address: user.pickupAddress,
+      isEnterpriseEntity: false
+    };
+
+    if (user.activeBusinessId) {
+      // Find the specific sub-business in the array
+      const subBiz = user.enterpriseBusinesses.find(
+        (b) => b._id.toString() === user.activeBusinessId.toString()
+      );
+
+      if (subBiz) {
+        activeContext = {
+          id: subBiz._id,
+          businessName: subBiz.businessName,
+          logo: subBiz.logo?.url,
+          address: subBiz.address,
+          isEnterpriseEntity: true
+        };
+      }
+    }
+
+    // 2. Attach the context to the response
+    res.json({
+      ...userObj,
+      activeContext // The Frontend will now use user.activeContext.businessName
+    });
+
   } catch (err) {
     console.error(err);
     res.status(500).json({ message: 'Server error' });
