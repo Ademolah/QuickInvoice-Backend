@@ -65,9 +65,16 @@ const productSchema = new mongoose.Schema(
   "Books & Educational Materials",
   "Agricultural Products",
   "Other"]},
-    // quantity: {type: Number, required: true},
-    description: { type: String, trim: true },
-    active: { type: Boolean, default: true },
+   
+  description: { type: String, trim: true },
+
+  businessId: { 
+      type: mongoose.Schema.Types.ObjectId, 
+      ref: 'User.enterpriseBusinesses',
+      default: null // null means it belongs to the "Main" account
+    },
+
+  active: { type: Boolean, default: true },
   },
   { timestamps: true }
 );

@@ -34,6 +34,7 @@ router.post("/", auth, trackActivity, async (req, res) => {
     //  Create product
     const payload = {
       userId: req.userId,
+      businessId: user.activeBusinessId,
       name: String(name).trim(),
       price: Number(price),
       category: category ? String(category).trim() : "General",
@@ -62,7 +63,12 @@ router.post("/", auth, trackActivity, async (req, res) => {
 router.get('/', auth,trackActivity, async (req, res) => {
   try {
     const { search = '', active } = req.query;
-    const q = { userId: req.userId };
+    const user = await User.findById(req.userId);
+
+    const q = { 
+      userId: req.userId,
+      businessId: user.activeBusinessId // 👈 THE FILTER: Keeps inventory separated
+    };
     if (search) q.name = { $regex: search, $options: 'i' };
     if (active === 'true') q.active = true;
     if (active === 'false') q.active = false;
@@ -81,7 +87,13 @@ router.get('/', auth,trackActivity, async (req, res) => {
  */
 router.get('/:id', auth,trackActivity, async (req, res) => {
   try {
-    const prod = await Product.findOne({ _id: req.params.id, userId: req.userId });
+    const user = await User.findById(req.userId)
+
+    const prod = await Product.findOne({ 
+      _id: req.params.id, 
+      userId: req.userId,
+      businessId: user.activeBusinessId // 👈 Extra layer of context security
+    });
     if (!prod) return res.status(404).json({ message: 'Not found' });
     res.json(prod);
   } catch (err) {
@@ -97,6 +109,7 @@ router.get('/:id', auth,trackActivity, async (req, res) => {
 router.put('/:id', auth,trackActivity, async (req, res) => {
   try {
     const { name, price, stock,category, sku, description, active } = req.body;
+    const user = await User.findById(req.userId)
 
     const update = {};
     if (name !== undefined) update.name = String(name).trim();
@@ -108,7 +121,11 @@ router.put('/:id', auth,trackActivity, async (req, res) => {
     if (active !== undefined) update.active = !!active;
 
     const prod = await Product.findOneAndUpdate(
-      { _id: req.params.id, userId: req.userId },
+      { 
+        _id: req.params.id, 
+        userId: req.userId,
+        businessId: user.activeBusinessId // 👈 THE CONTEXT LOCK
+      },
       update,
       { new: true, runValidators: true }
     );
@@ -142,7 +159,12 @@ router.delete('/:id', auth,trackActivity, async (req, res) => {
 
 router.get("/export/all", auth, async (req, res) => {
   try {
-    const items = await Product.find({ userId: req.userId })
+    const user = await User.findById(req.userId)
+
+    const items = await Product.find({ 
+      userId: req.userId,
+      businessId: user.activeBusinessId // 👈 THE FILTER: Export only the active business's goods
+    })
       .sort({ createdAt: -1 })
       .select("name sku price stock category description active createdAt");
     res.json({

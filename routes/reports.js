@@ -24,6 +24,7 @@ router.get("/statement", auth, async (req, res) => {
     const end = new Date(year, m, 1);
     const invoices = await Invoice.find({
       userId: req.userId,
+      businessId: user.activeBusinessId,
       createdAt: { $gte: start, $lt: end },
     }).sort({ createdAt: 1 });
     res.json({

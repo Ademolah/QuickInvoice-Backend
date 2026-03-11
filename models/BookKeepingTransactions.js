@@ -37,6 +37,13 @@ const transactionSchema = new mongoose.Schema({
     type: String, // Can store Invoice ID or Receipt Number
     trim: true 
   },
+
+  businessId: { 
+        type: mongoose.Schema.Types.ObjectId, 
+        ref: 'User.enterpriseBusinesses',
+        default: null // null means it belongs to the "Main" account
+    },
+  
   attachmentUrl: { 
     type: String // URL for uploaded receipt images (S3/Cloudinary)
   },

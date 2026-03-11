@@ -1,14 +1,17 @@
 const Expense = require("../models/Expenses");
 const mongoose = require("mongoose");
+const User = require("../models/Users")
 
 /**
  * CREATE EXPENSE
  */
 exports.createExpense = async (req, res) => {
   try {
+    const user = await User.findById(req.userId)
     const expense = await Expense.create({
       ...req.body,
       userId: req.userId,
+      businessId: user.activeBusinessId,
     });
 
     // Helpful for debugging the new fields
@@ -30,7 +33,13 @@ exports.createExpense = async (req, res) => {
 exports.getExpenses = async (req, res) => {
   try {
     const { month } = req.query; // YYYY-MM
-    let filter = { userId: req.userId };
+    const user = await User.findById(req.userId)
+
+    let filter = { 
+      userId: req.userId,
+      businessId: user.activeBusinessId // 👈 THE FILTER: Keeps costs separated
+    };
+
     if (month) {
       const [year, m] = month.split("-");
       const start = new Date(year, m - 1, 1);
@@ -71,6 +80,8 @@ exports.deleteExpense = async (req, res) => {
 exports.getExpensesByMonth = async (req, res) => {
   try {
     const { month } = req.query; // expected format: YYYY-MM
+    const user = await User.findById(req.userId)
+    
     if (!month) {
       return res.status(400).json({
         success: false,
@@ -80,10 +91,13 @@ exports.getExpensesByMonth = async (req, res) => {
     const [year, m] = month.split("-");
     const startDate = new Date(year, m - 1, 1);
     const endDate = new Date(year, m, 1);
+
     const expenses = await Expense.find({
       userId: req.userId,
+      businessId: user.activeBusinessId, // 👈 THE FILTER: Keeps the monthly report clean
       expenseDate: { $gte: startDate, $lt: endDate },
     }).sort({ expenseDate: -1 });
+
     res.status(200).json({
       success: true,
       count: expenses.length,
@@ -99,14 +113,23 @@ exports.getExpensesByMonth = async (req, res) => {
 };
 
 
-// exports.getExpenseStats
 exports.getExpenseStats = async (req, res) => {
   try {
-    // CRITICAL: Ensure we are using 'new mongoose.Types.ObjectId'
+    // 1. Fetch user to find the current active context
+    const user = await User.findById(req.userId);
+    if (!user) return res.status(404).json({ message: "User not found" });
+
+    // 2. Build the match query dynamically
+    // If activeBusinessId is null, we match records where businessId is also null
+    const businessMatch = user.activeBusinessId 
+      ? new mongoose.Types.ObjectId(user.activeBusinessId) 
+      : null;
+
     const stats = await Expense.aggregate([
       { 
         $match: { 
-          userId: new mongoose.Types.ObjectId(req.userId) 
+          userId: new mongoose.Types.ObjectId(req.userId),
+          businessId: businessMatch // 👈 THE FILTER: Scopes the math to the active business
         } 
       },
       {

@@ -17,6 +17,15 @@ const invoiceSchema = new mongoose.Schema({
   subtotal: { type: Number, required: true },
   tax: { type: Number, default: 0 },
   discount: { type: Number, default: 0 },
+
+  //business
+  // models/Invoice.js (apply same to Receipt.js)
+  businessId: { 
+    type: mongoose.Schema.Types.ObjectId, 
+    ref: 'User.enterpriseBusinesses',
+    default: null // null means it belongs to the "Main" account
+  },
+
   total: { type: Number, required: true },
   outstandingBalance: {type: Number, default: 0},
   status: { type: String, enum: ['draft', 'sent', 'paid', 'overdue'], default: 'draft' },

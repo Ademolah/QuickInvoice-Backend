@@ -44,24 +44,37 @@ exports.updateAccountDetails = async (req, res) => {
       return res.status(400).json({ message: 'All fields are required' });
     }
 
-    const updatedUser = await User.findByIdAndUpdate(
-      req.user.id,
-      {
-        accountDetails: { bankName, accountNumber, accountName, bankCode },
-      },
-      { new: true }
-    ).select('-passwordHash'); // Hide passwordHash in response
+    const user = await User.findById(req.user.id);
+    if (!user) return res.status(404).json({ message: 'User not found' });
 
-    if (!updatedUser) {
-      return res.status(404).json({ message: 'User not found' });
+    const newDetails = { bankName, accountNumber, accountName, bankCode };
+
+    // 1. Check if we are updating a Sub-Business (Enterprise Entity)
+    if (user.activeBusinessId) {
+      const businessIndex = user.enterpriseBusinesses.findIndex(
+        (b) => b._id.toString() === user.activeBusinessId.toString()
+      );
+
+      if (businessIndex !== -1) {
+        // Update the specific business in the array
+        user.enterpriseBusinesses[businessIndex].accountDetails = newDetails;
+        console.log(`🏦 Updated bank details for Sub-Business: ${user.activeBusinessId}`);
+      }
+    } else {
+      // 2. Fallback: Update the Global User account
+      user.accountDetails = newDetails;
+      console.log("👤 Updated bank details for Global Account");
     }
+
+    await user.save();
 
     res.json({
       message: 'Account details updated successfully',
-      accountDetails: updatedUser.accountDetails,
+      accountDetails: newDetails,
     });
+
   } catch (error) {
-    console.error(error);
+    console.error("Error updating account details:", error);
     res.status(500).json({ message: 'Server error' });
   }
 };

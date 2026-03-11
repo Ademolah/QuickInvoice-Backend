@@ -24,6 +24,12 @@ const ReportSchema = new mongoose.Schema({
     default: "monthly",
   },
 
+  businessId: { 
+      type: mongoose.Schema.Types.ObjectId, 
+      ref: 'User.enterpriseBusinesses',
+      default: null // null means it belongs to the "Main" account
+    },
+
   startDate: { type: Date, required: true },
   endDate: { type: Date, required: true },
 

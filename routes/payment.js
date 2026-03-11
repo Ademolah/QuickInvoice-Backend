@@ -5,10 +5,12 @@ const protect = require('../middleware/authMiddleware'); // your protect
 const User = require('../models/Users');
 const crypto = require('crypto')
 const sendSubscriptionEmail = require('../utils/sendSubscriptionEmail')
+const sendEnterpriseEmail = require('../utils/sendEnterpriseEmail')
 const Order = require('../models/Order')
 const sendVendorEmail = require('../utils/vendorOrderEmail')
 const sendCustomerOrderEmail = require('../utils/customerOrderEmail')
 const sendOrderCorrespondenceEmail = require('../utils/sendCorrespondenceEmail')
+const SubscriptionTransaction = require('../models/SubscriptionTransactions');
 
 const router = express.Router();
 
@@ -16,26 +18,42 @@ const PAYSTACK_SECRET = process.env.PAYSTACK_SECRET_KEY;
 const BASE_URL = process.env.BASE_URL || 'http://localhost:4000';
 const FRONTEND_URL = process.env.FRONTEND_URL || 'http://localhost:3000';
 const PLAN_PRICE = Number(process.env.PLAN_PRICE_KOBO); // in kobo
-// const PLAN_PRICE = Number(process.env.PLAN_PRICE_KOBO || 50000); // in kobo
+
+
+
+const ENTERPRISE_PLAN_PRICE = Number(process.env.ENTERPRISE_PLAN_PRICE_KOBO); // in kobo
+
+
 
 // initialize transaction
-router.post('/initialize', protect, async (req, res) => {
+
+router.post('/initialize', protect, express.json(), async (req, res) => {
   try {
+    // Now req.body will definitely be defined as an object
+    const { plan } = req.body || {}; 
     const userId = req.userId || req.user.id;
+    
     const user = await User.findById(userId);
     if (!user) return res.status(404).json({ message: 'User not found' });
 
+    // Fallback logic so it doesn't break if 'plan' is missing
+    let amountToCharge = PLAN_PRICE
+    let metadataType = "subscription";
+
+    if (plan === 'enterprise') {
+      amountToCharge = ENTERPRISE_PLAN_PRICE
+      metadataType = "enterprise_subscription";
+    }
+
     const response = await axios.post('https://api.paystack.co/transaction/initialize', {
       email: user.email,
-      amount: PLAN_PRICE, // in kobo
-      // callback_url: `https://www.quickinvoiceng.com/billing`, // customer returns here
-      callback_url: `${FRONTEND_URL}/billing`, // customer returns here
-      metadata: { userId, type: "subscription" } // save user id to metadata for verify
+      amount: amountToCharge,
+      callback_url: `${FRONTEND_URL}/billing`,
+      metadata: { userId, type: metadataType }
     }, {
       headers: { Authorization: `Bearer ${PAYSTACK_SECRET}` }
     });
 
-    // respond with authorization url and reference
     return res.json({ status: true, data: response.data.data });
   } catch (err) {
     console.error('Paystack initialize error', err.response?.data || err.message);
@@ -117,22 +135,72 @@ router.post(
       // ================================
       //  SUBSCRIPTION PAYMENT
       // ================================
-      if (meta.type === "subscription") {
+
+
+      if (meta.type === "subscription" || meta.type === "enterprise_subscription") {
         const user = await User.findById(meta.userId);
+        
         if (user) {
           const now = new Date();
+          // Logic: If user has active time, stack the new 30 days on top of it
           const currentExpiry =
             user.proExpires && user.proExpires > now
               ? new Date(user.proExpires)
               : now;
-          user.plan = "pro";
+
+          // Set the new Plan
+          const newPlan = meta.type === "enterprise_subscription" ? "enterprise" : "pro";
+          
+          user.plan = newPlan;
           user.proExpires = new Date(currentExpiry.getTime() + 30 * 24 * 60 * 60 * 1000);
+          
           await user.save();
-          await sendSubscriptionEmail(user.name, user.email, user.businessName);
-          console.log("✔️ Subscription upgraded for", user.email);
+
+
+          // 📝 LOG THE TRANSACTION FOR BILLING HISTORY
+          
+          try {
+            console.log("🛠️ Initializing history log for plan:", newPlan);
+
+            // 1. Explicitly define the amount here to avoid 'undefined' errors
+            const transactionAmount = newPlan === "enterprise" ? 10000 : 3000;
+
+            const transactionData = {
+              userId: user._id,
+              name: user.name || "Business Owner",
+              plan: newPlan,
+              amount: transactionAmount, // Use the fresh variable
+              reference: meta?.reference || `TXN-${Date.now()}`, 
+              date: new Date(),
+              status: 'success'
+            };
+
+            console.log("📦 Data prepared for Mongo:", transactionData);
+
+            // 2. Create the record
+            const savedTxn = await SubscriptionTransaction.create(transactionData);
+            
+            console.log("✅ SUCCESS: Transaction recorded with ID:", savedTxn._id);
+          } catch (dbErr) {
+            // This will now catch things like Schema validation errors
+            console.error("❌ DATABASE SAVE ERROR:", dbErr.message);
+          }
+
+          // Send tailored email based on plan
+          if (newPlan === "enterprise") {
+            // Trigger specific Enterprise Welcome Email if you have one
+            await sendEnterpriseEmail(user.name, user.email);
+            console.log("🚀 ENTERPRISE upgrade successful for:", user.email);
+          } else {
+            await sendSubscriptionEmail(user.name, user.email, user.businessName);
+            console.log("✔️ PRO upgrade successful for:", user.email);
+          }
         }
         return res.status(200).send("Subscription handled");
       }
+
+
+
       // ================================
       //  MARKET ORDER PAYMENT
       // ================================

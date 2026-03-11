@@ -38,6 +38,16 @@ const expenseSchema = new mongoose.Schema(
       enum: ["cash", "transfer", "card"],
       default: "cash",
     },
+
+    //business
+      // models/Invoice.js (apply same to Receipt.js)
+      businessId: { 
+        type: mongoose.Schema.Types.ObjectId, 
+        ref: 'User.enterpriseBusinesses',
+        default: null // null means it belongs to the "Main" account
+      },
+
+
     expenseDate: {
       type: Date,
       required: true,

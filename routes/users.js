@@ -9,17 +9,55 @@ const upload = require('../middleware/upload')
 const cloudinary = require('../utils/cloudinary')
 const trackActivity = require('../middleware/trackActivity')
 const Transactions = require('../models/Transaction')
+const SubscriptionTransaction = require('../models/SubscriptionTransactions');
 
 
 const router = express.Router();
 
 // Get current logged-in user info
+// Get current logged-in user info
 router.get('/me', auth, trackActivity, async (req, res) => {
   try {
-    // const user = await User.findById(req.user.id).select('businessName email');
-    const user = await User.findById(req.user.id)
+    const user = await User.findById(req.user.id);
     if (!user) return res.status(404).json({ message: 'User not found' });
-    res.json(user);
+
+    // Convert to object so we can add virtual/computed fields
+    const userObj = user.toObject();
+
+    // 1. Determine the "Active Context"
+    // This tells the Frontend: "This is the business name/logo you should show right now"
+    let activeContext = {
+      id: null, // null means Main Account
+      businessName: user.businessName,
+      logo: user.avatar, 
+      address: user.pickupAddress,
+      isEnterpriseEntity: false,
+    };
+
+    if (user.activeBusinessId) {
+      // Find the specific sub-business in the array
+      const subBiz = user.enterpriseBusinesses.find(
+        (b) => b._id.toString() === user.activeBusinessId.toString()
+      );
+
+      if (subBiz) {
+        activeContext = {
+          id: subBiz._id,
+          businessName: subBiz.businessName,
+          logo: subBiz.logo?.url,
+          address: subBiz.address,
+          isEnterpriseEntity: true,
+          accountDetails: subBiz.accountDetails
+        };
+      }
+    }
+
+    // 2. Attach the context to the response
+    res.json({
+      ...userObj,
+      activeContext // The Frontend will now use user.activeContext.businessName
+    });
+
   } catch (err) {
     console.error(err);
     res.status(500).json({ message: 'Server error' });
@@ -29,16 +67,36 @@ router.get('/me', auth, trackActivity, async (req, res) => {
 // In your userRoutes.js or wherever your routes are defined
 router.get("/account-details", auth, trackActivity, async (req, res) => {
   try {
-    const userId = req.user.id; // Assuming you have auth middleware
-    const user = await User.findById(userId).select("accountDetails");
-    // console.log(user);
+    const userId = req.userId;
 
+    // 1. Fetch user with both global details AND enterprise businesses
+    const user = await User.findById(userId).select("accountDetails enterpriseBusinesses activeBusinessId");
 
     if (!user) {
       return res.status(404).json({ message: "User not found" });
     }
 
-    res.json({ accountDetails: user.accountDetails });
+    // 2. Default to the main accountDetails (The "Global Parent")
+    let activeDetails = user.accountDetails;
+
+    // 3. Context Check: Are we in a sub-business?
+    if (user.activeBusinessId) {
+      const activeBusiness = user.enterpriseBusinesses.id(user.activeBusinessId);
+      
+      // Check if this specific business has its own account number set
+      // We check for a specific field like 'accountNumber' to ensure it's not just an empty object {}
+      if (activeBusiness && activeBusiness.accountDetails && activeBusiness.accountDetails.accountNumber) {
+        activeDetails = activeBusiness.accountDetails;
+        console.log(`Using Business-Specific Bank Details for: ${activeBusiness.businessName}`);
+      } else {
+        console.log(`Business specific details not found. Falling back to Main Account details.`);
+      }
+    }
+
+    res.json({ 
+      success: true,
+      accountDetails: activeDetails 
+    });
   } catch (error) {
     console.error("Error fetching bank details:", error);
     res.status(500).json({ message: "Server error" });
@@ -86,19 +144,26 @@ router.post('/avatar', auth, trackActivity, upload.single('image'), asyncHandler
   if (!req.file) {
     return res.status(400).json({ message: 'No image file provided' });
   }
+
   const user = await User.findById(req.userId);
   if (!user) return res.status(404).json({ message: 'User not found' });
-  // Upload to Cloudinary via upload_stream to avoid writing to disk
+
+  // 1. Identify the Context (Is this for the Main account or a Sub-Business?)
+  const activeBusiness = user.activeBusinessId 
+    ? user.enterpriseBusinesses.id(user.activeBusinessId) 
+    : null;
+
+  // 2. Cloudinary Upload Helper (remains efficient)
   const bufferStreamUpload = (buffer) =>
     new Promise((resolve, reject) => {
       const stream = cloudinary.uploader.upload_stream(
         {
-          folder: `quickinvoice_ng/avatars`, // optional folder
+          folder: `quickinvoice_ng/${activeBusiness ? 'business_logos' : 'avatars'}`,
           transformation: [
-            { width: 800, height: 800, crop: "limit" }, // limit size
+            { width: 800, height: 800, crop: "limit" },
             { quality: "auto" }
           ],
-          format: 'png', // normalize format (optional)
+          format: 'png',
         },
         (error, result) => {
           if (error) return reject(error);
@@ -107,30 +172,64 @@ router.post('/avatar', auth, trackActivity, upload.single('image'), asyncHandler
       );
       stream.end(buffer);
     });
-  // If user already has a public id -> try deleting old image (best effort)
-  if (user.avatarPublicId) {
+
+  // 3. Clean up OLD image (Context-Aware)
+  const existingPublicId = activeBusiness ? activeBusiness.avatarPublicId : user.avatarPublicId;
+  
+  if (existingPublicId) {
     try {
-      await cloudinary.uploader.destroy(user.avatarPublicId);
+      await cloudinary.uploader.destroy(existingPublicId);
     } catch (err) {
-      console.warn('Failed to delete previous avatar from Cloudinary', err.message || err);
+      console.warn('Cleanup failed', err.message);
     }
   }
-  // Upload new image
+
+  // 4. Upload & Save
   const result = await bufferStreamUpload(req.file.buffer);
-  // Save URL and public_id to user
-  user.avatar = result.secure_url;
-  user.avatarPublicId = result.public_id;
+
+  if (activeBusiness) {
+  // Use your schema's specific 'logo' object structure
+  activeBusiness.logo = {
+    url: result.secure_url,
+    publicId: result.public_id
+  };
+  } else {
+    // Main account still uses 'avatar'
+    user.avatar = result.secure_url;
+    user.avatarPublicId = result.public_id;
+  }
+
   await user.save();
 
-  console.log(`Image uploaded successfully for ${user.name}`);
+  console.log(`Logo/Avatar updated for context: ${activeBusiness ? activeBusiness.businessName : 'Main Account'}`);
 
   res.json({
-    message: 'Avatar uploaded successfully',
-    avatar: user.avatar,
-    avatarPublicId: user.avatarPublicId,
+    message: 'Logo updated successfully',
+    avatar: result.secure_url,
+    avatarPublicId: result.public_id,
   });
-})
-);
+}));
+
+
+
+// In your routes file:
+router.get('/subscription-history', auth, async (req, res) => {
+  try {
+    // Check if req.userId exists first
+    if (!req.userId) {
+      return res.status(401).json({ message: "User ID missing from token" });
+    }
+
+    const history = await SubscriptionTransaction.find({ userId: req.userId }).sort({ date: -1 });
+    res.json({ success: true, data: history });
+  } catch (err) {
+    // THIS LINE IS KEY: Look at your terminal after this logs
+    console.error("DETAILED BEYOND ERROR:", err); 
+    res.status(500).json({ message: "Error fetching billing history", error: err.message });
+  }
+});
+
+
 
 router.put("/complete-profile", auth, trackActivity, async (req, res) => {
   try {
