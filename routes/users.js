@@ -9,6 +9,7 @@ const upload = require('../middleware/upload')
 const cloudinary = require('../utils/cloudinary')
 const trackActivity = require('../middleware/trackActivity')
 const Transactions = require('../models/Transaction')
+const SubscriptionTransaction = require('../models/SubscriptionTransactions');
 
 
 const router = express.Router();
@@ -30,7 +31,7 @@ router.get('/me', auth, trackActivity, async (req, res) => {
       businessName: user.businessName,
       logo: user.avatar, 
       address: user.pickupAddress,
-      isEnterpriseEntity: false
+      isEnterpriseEntity: false,
     };
 
     if (user.activeBusinessId) {
@@ -45,7 +46,8 @@ router.get('/me', auth, trackActivity, async (req, res) => {
           businessName: subBiz.businessName,
           logo: subBiz.logo?.url,
           address: subBiz.address,
-          isEnterpriseEntity: true
+          isEnterpriseEntity: true,
+          accountDetails: subBiz.accountDetails
         };
       }
     }
@@ -207,6 +209,25 @@ router.post('/avatar', auth, trackActivity, upload.single('image'), asyncHandler
     avatarPublicId: result.public_id,
   });
 }));
+
+
+
+// In your routes file:
+router.get('/subscription-history', auth, async (req, res) => {
+  try {
+    // Check if req.userId exists first
+    if (!req.userId) {
+      return res.status(401).json({ message: "User ID missing from token" });
+    }
+
+    const history = await SubscriptionTransaction.find({ userId: req.userId }).sort({ date: -1 });
+    res.json({ success: true, data: history });
+  } catch (err) {
+    // THIS LINE IS KEY: Look at your terminal after this logs
+    console.error("DETAILED BEYOND ERROR:", err); 
+    res.status(500).json({ message: "Error fetching billing history", error: err.message });
+  }
+});
 
 
 

@@ -10,6 +10,7 @@ const Order = require('../models/Order')
 const sendVendorEmail = require('../utils/vendorOrderEmail')
 const sendCustomerOrderEmail = require('../utils/customerOrderEmail')
 const sendOrderCorrespondenceEmail = require('../utils/sendCorrespondenceEmail')
+const SubscriptionTransaction = require('../models/SubscriptionTransactions');
 
 const router = express.Router();
 
@@ -155,10 +156,40 @@ router.post(
           
           await user.save();
 
+
+          // 📝 LOG THE TRANSACTION FOR BILLING HISTORY
+          
+          try {
+            console.log("🛠️ Initializing history log for plan:", newPlan);
+
+            // 1. Explicitly define the amount here to avoid 'undefined' errors
+            const transactionAmount = newPlan === "enterprise" ? 10000 : 3000;
+
+            const transactionData = {
+              userId: user._id,
+              name: user.name || "Business Owner",
+              plan: newPlan,
+              amount: transactionAmount, // Use the fresh variable
+              reference: meta?.reference || `TXN-${Date.now()}`, 
+              date: new Date(),
+              status: 'success'
+            };
+
+            console.log("📦 Data prepared for Mongo:", transactionData);
+
+            // 2. Create the record
+            const savedTxn = await SubscriptionTransaction.create(transactionData);
+            
+            console.log("✅ SUCCESS: Transaction recorded with ID:", savedTxn._id);
+          } catch (dbErr) {
+            // This will now catch things like Schema validation errors
+            console.error("❌ DATABASE SAVE ERROR:", dbErr.message);
+          }
+
           // Send tailored email based on plan
           if (newPlan === "enterprise") {
             // Trigger specific Enterprise Welcome Email if you have one
-            await sendEnterpriseWelcomeEmail(user.name, user.email, user.businessName);
+            await sendEnterpriseEmail(user.name, user.email);
             console.log("🚀 ENTERPRISE upgrade successful for:", user.email);
           } else {
             await sendSubscriptionEmail(user.name, user.email, user.businessName);
