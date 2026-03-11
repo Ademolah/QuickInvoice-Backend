@@ -67,7 +67,7 @@ const sendSubscriptionEmail = async(name, email, businessName)=>{
           <table width="100%" cellspacing="0" cellpadding="0">
             <tr>
               <td style="padding:8px 0; font-size:14px; color:#64748B;">Plan Level</td>
-              <td align="right" style="padding:8px 0; font-size:14px; font-weight:700; color:#0F172A;">Pro Annual</td>
+              <td align="right" style="padding:8px 0; font-size:14px; font-weight:700; color:#0F172A;">Pro Monthly</td>
             </tr>
             <tr>
               <td style="padding:8px 0; font-size:14px; color:#64748B;">Account Identity</td>
