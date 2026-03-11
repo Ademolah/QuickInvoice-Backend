@@ -80,41 +80,6 @@ exports.updateAccountDetails = async (req, res) => {
 };
 
 
-
-// Update bank account details
-// exports.updateAccountDetails = async (req, res) => {
-//   try {
-//     const { bankName, accountNumber, accountName } = req.body;
-
-//     if (!bankName || !accountNumber || !accountName) {
-//       return res.status(400).json({ message: 'All fields are required' });
-//     }
-
-//     const updatedUser = await User.findByIdAndUpdate(
-//       req.user.id,
-//       {
-//         accountDetails: { bankName, accountNumber, accountName},
-//       },
-//       { new: true }
-//     ).select('-passwordHash'); // Hide passwordHash in response
-
-//     if (!updatedUser) {
-//       return res.status(404).json({ message: 'User not found' });
-//     }
-
-//     res.json({
-//       message: 'Account details updated successfully',
-//       accountDetails: updatedUser.accountDetails,
-//     });
-//   } catch (error) {
-//     console.error(error);
-//     res.status(500).json({ message: 'Server error' });
-//   }
-// };
-
-
-
-
 exports.changePassword = async (req, res) => {
   try {
     const { currentPassword, newPassword } = req.body;
