@@ -5,6 +5,7 @@ const protect = require('../middleware/authMiddleware'); // your protect
 const User = require('../models/Users');
 const crypto = require('crypto')
 const sendSubscriptionEmail = require('../utils/sendSubscriptionEmail')
+const sendEnterpriseEmail = require('../utils/sendEnterpriseEmail')
 const Order = require('../models/Order')
 const sendVendorEmail = require('../utils/vendorOrderEmail')
 const sendCustomerOrderEmail = require('../utils/customerOrderEmail')
@@ -24,30 +25,6 @@ const ENTERPRISE_PLAN_PRICE = Number(process.env.ENTERPRISE_PLAN_PRICE_KOBO); //
 
 
 // initialize transaction
-// router.post('/initialize', protect, async (req, res) => {
-//   try {
-//     const userId = req.userId || req.user.id;
-//     const user = await User.findById(userId);
-//     if (!user) return res.status(404).json({ message: 'User not found' });
-
-//     const response = await axios.post('https://api.paystack.co/transaction/initialize', {
-//       email: user.email,
-//       amount: PLAN_PRICE, // in kobo
-//       // callback_url: `https://www.quickinvoiceng.com/billing`, // customer returns here
-//       callback_url: `${FRONTEND_URL}/billing`, // customer returns here
-//       metadata: { userId, type: "subscription" } // save user id to metadata for verify
-//     }, {
-//       headers: { Authorization: `Bearer ${PAYSTACK_SECRET}` }
-//     });
-
-//     // respond with authorization url and reference
-//     return res.json({ status: true, data: response.data.data });
-//   } catch (err) {
-//     console.error('Paystack initialize error', err.response?.data || err.message);
-//     return res.status(500).json({ status: false, message: 'Payment init failed' });
-//   }
-// });
-
 
 router.post('/initialize', protect, express.json(), async (req, res) => {
   try {
@@ -159,24 +136,6 @@ router.post(
       // ================================
 
 
-      // if (meta.type === "subscription") {
-      //   const user = await User.findById(meta.userId);
-      //   if (user) {
-      //     const now = new Date();
-      //     const currentExpiry =
-      //       user.proExpires && user.proExpires > now
-      //         ? new Date(user.proExpires)
-      //         : now;
-      //     user.plan = "pro";
-      //     user.proExpires = new Date(currentExpiry.getTime() + 30 * 24 * 60 * 60 * 1000);
-      //     await user.save();
-      //     await sendSubscriptionEmail(user.name, user.email, user.businessName);
-      //     console.log("✔️ Subscription upgraded for", user.email);
-      //   }
-      //   return res.status(200).send("Subscription handled");
-      // }
-
-
       if (meta.type === "subscription" || meta.type === "enterprise_subscription") {
         const user = await User.findById(meta.userId);
         
@@ -199,7 +158,7 @@ router.post(
           // Send tailored email based on plan
           if (newPlan === "enterprise") {
             // Trigger specific Enterprise Welcome Email if you have one
-            // await sendEnterpriseWelcomeEmail(user.name, user.email, user.businessName);
+            await sendEnterpriseWelcomeEmail(user.name, user.email, user.businessName);
             console.log("🚀 ENTERPRISE upgrade successful for:", user.email);
           } else {
             await sendSubscriptionEmail(user.name, user.email, user.businessName);

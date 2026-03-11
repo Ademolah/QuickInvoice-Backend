@@ -69,7 +69,10 @@ const checkUsage = async (req, res, next) => {
 
     // 1. ✅ THE FIX: PRO BYPASS
     // If the user is on the Pro plan, we skip the limit check entirely.
-    if (user.plan === 'pro') {
+    const premiumPlans = ['pro', 'enterprise'];
+
+    if (premiumPlans.includes(user.plan)) {
+      console.log(`User ${user.name} is on ${user.plan} plan. Bypassing usage limits.`);
       return next(); 
     }
 

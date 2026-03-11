@@ -16,40 +16,33 @@ const router = express.Router();
 router.post('/', auth, trackActivity, async (req, res) => {
   try {
     const {
-      clientName,
-      clientEmail,
-      clientPhone,
-      items = [],
-      tax = 0,
-      discount = 0,
-      dueDate,
-      notes,
-      outstandingBalance // new field from frontend
+      clientName, clientEmail, clientPhone, items = [],
+      tax = 0, discount = 0, dueDate, notes, outstandingBalance
     } = req.body;
+
     if (!clientName || !items.length) {
       return res.status(400).json({ message: 'Client name and items are required' });
     }
-    // calculate totals
+
+    // 1. Fetch User to get the current business context
+    const user = await User.findById(req.userId);
+    if (!user) return res.status(404).json({ message: 'User not found' });
+
+    // Calculate totals
     const subtotal = items.reduce((s, it) => s + (it.quantity * it.unitPrice), 0);
     const total = Math.max(0, subtotal + tax - discount);
-    // compute item totals for each item
+    
     const computedItems = items.map(it => ({
       ...it,
       total: it.quantity * it.unitPrice
     }));
-    
 
-    const finalOutstanding =
-      outstandingBalance !== undefined &&
-      outstandingBalance !== null &&
-      outstandingBalance !== "" &&
-      !isNaN(Number(outstandingBalance))
-        ? Number(outstandingBalance)
-        : 0;
+    const finalOutstanding = !isNaN(Number(outstandingBalance)) ? Number(outstandingBalance) : 0;
 
-
+    // 2. Create Invoice with the businessId stamp
     const inv = await Invoice.create({
       userId: req.userId,
+      businessId: user.activeBusinessId, // 👈 THE CONTEXT STAMP
       clientName,
       clientEmail,
       clientPhone,
@@ -58,11 +51,12 @@ router.post('/', auth, trackActivity, async (req, res) => {
       tax,
       discount,
       total,
-      outstandingBalance: finalOutstanding, // new field
+      outstandingBalance: finalOutstanding,
       status: 'sent',
       dueDate,
       notes
     });
+
     res.json(inv);
   } catch (e) {
     console.error(e);
@@ -73,135 +67,88 @@ router.post('/', auth, trackActivity, async (req, res) => {
 
 
 
-// List invoices for user
-router.get('/', auth,trackActivity, async (req, res) => {
+// List invoices for specific context
+router.get('/', auth, trackActivity, async (req, res) => {
   try {
-    const list = await Invoice.find({ userId: req.userId }).sort({ createdAt: -1 });
-  res.json(list);
+    // 1. Fetch user to see what context they are in
+    const user = await User.findById(req.userId);
+    
+    // 2. Filter by userId AND businessId
+    const list = await Invoice.find({ 
+      userId: req.userId, 
+      businessId: user.activeBusinessId // 👈 THE FILTER
+    }).sort({ createdAt: -1 });
+
+    res.json(list);
   } catch (e) {
     console.error(e);
-  res.status(500).json({ message: 'Server error' });
+    res.status(500).json({ message: 'Server error' });
   }
 });
 
-// Get one
-router.get('/:id', auth,trackActivity, async (req, res) => {
+// Get one (Security check)
+router.get('/:id', auth, trackActivity, async (req, res) => {
   try {
+    // We search by ID and userId. We don't necessarily need businessId here 
+    // because the ID is unique, but it's good practice.
     const inv = await Invoice.findOne({ _id: req.params.id, userId: req.userId });
-  if (!inv) return res.status(404).json({ message: 'Not found' });
-  res.json(inv);
+    if (!inv) return res.status(404).json({ message: 'Not found' });
+    res.json(inv);
   } catch (e) {
     console.error(e);
-  res.status(500).json({ message: 'Server error' });
+    res.status(500).json({ message: 'Server error' });
   }
 });
-
-
-
-// Mark paid
-// router.patch('/:id/pay', auth,trackActivity, async (req, res) => {
-//   try {
-//     // 1. Find the invoice
-//     const invoice = await Invoice.findOne({ _id: req.params.id, userId: req.userId });
-//     if (!invoice) return res.status(404).json({ message: 'Not found' });
-
-//     // 2. Load Product model
-
-//     let lowStockWarnings = [];
-//     // 3. Loop through invoice items and deduct from inventory
-//     for (const item of invoice.items) {
-//       const product = await Product.findOne({
-//         userId: invoice.userId,
-//         name: new RegExp(`^${item.description}$`, 'i')  // Match by name (case insensitive)
-//       });
-
-//       if (!product) {
-//         // lowStockWarnings.push(`Product '${item.description}' not found in inventory`);
-//         console.log("Product not found in inventory");
-//         continue;
-//       }
-
-//       const newStock = (product.stock || 0) - item.quantity;
-//       if (newStock < 5) {
-//         lowStockWarnings.push(`Stock for '${item.description}' is now very low`);
-//       }
-//       product.stock = newStock;
-//       await product.save();
-//     }
-//     // 4. Mark invoice as paid
-//     invoice.status = 'paid';
-//     await invoice.save();
-//     res.json({ ...invoice.toObject(), lowStockWarnings });
-//   } catch (e) {
-//     console.error(e);
-//     res.status(500).json({ message: 'Server error' });
-//   }
-// });
 
 
 // Mark paid (with Inventory Deduction & Bookkeeping Integration)
 router.patch('/:id/pay', auth, trackActivity, async (req, res) => {
   try {
-    // 1. Find the invoice
+    // 1. Find invoice (Security: must match userId)
     const invoice = await Invoice.findOne({ _id: req.params.id, userId: req.userId });
     if (!invoice) return res.status(404).json({ message: 'Not found' });
-
-    // Prevent double-recording if already paid
-    if (invoice.status === 'paid') {
-      return res.status(400).json({ message: 'Invoice is already marked as paid' });
-    }
+    if (invoice.status === 'paid') return res.status(400).json({ message: 'Already paid' });
 
     let lowStockWarnings = [];
 
-    // 2. Loop through invoice items and deduct from inventory
+    // 2. Loop and deduct inventory from the SPECIFIC business context
     for (const item of invoice.items) {
       const product = await Product.findOne({
-        userId: req.userId, // Using req.userId for security consistency
+        userId: req.userId,
+        businessId: invoice.businessId, // 👈 Scoped to the same business as the invoice
         name: new RegExp(`^${item.description}$`, 'i')
       });
 
       if (product) {
         product.stock = (product.stock || 0) - item.quantity;
-        
-        // Premium touch: Dynamic threshold for warnings
-        if (product.stock < 5) {
-          lowStockWarnings.push(`Stock for '${item.description}' is now critically low (${product.stock} left)`);
-        }
+        if (product.stock < 5) lowStockWarnings.push(`${item.description} stock low (${product.stock} left)`);
         await product.save();
       }
     }
 
-    // 3. Mark invoice as paid
     invoice.status = 'paid';
     await invoice.save();
 
-    // 4. SURGICAL ADDITION: Automate Bookkeeping Entry
+    // 3. Automate Bookkeeping with businessId context
     try {
       await BookKeepingTransaction.create({
-        userId: req.userId,          // Must be 'userId' as per your schema
-        type: 'INCOME',              // Must be 'type' as per your schema
+        userId: req.userId,
+        businessId: invoice.businessId, // 👈 Ensures income hits the right entity's books
+        type: 'INCOME',
         category: 'Sales',
         amount: invoice.total || 0,
         date: new Date(),
-        description: `Payment received for Invoice #${invoice.clientName}`,
+        description: `Payment for Invoice #${invoice.clientName}`,
         referenceId: invoice._id,
         paymentMethod: 'Bank Transfer'
       });
     } catch (error) {
       console.error("Bookkeeping entry failed:", error);
-      // We don't want to crash the whole invoice payment if just the ledger entry fails,
-      // but since we want world-class reliability, we log it.
     }
 
-    res.json({ 
-      ...invoice.toObject(), 
-      lowStockWarnings, 
-      message: "Payment recorded and ledger updated" 
-    });
-
+    res.json({ ...invoice.toObject(), lowStockWarnings, message: "Payment recorded" });
   } catch (e) {
-    console.error("Payment Processing Error:", e);
-    res.status(500).json({ message: 'Server error during payment processing' });
+    res.status(500).json({ message: 'Server error' });
   }
 });
 
@@ -315,35 +262,20 @@ router.get('/:id/pdf', auth,trackActivity, async (req, res) => {
 
 
 // backend/routes/invoices.js (or wherever your log route is)
-router.post("/log", auth, checkUsage,trackActivity, async (req, res) => {
+
+router.post("/log", auth, checkUsage, trackActivity, async (req, res) => {
   try {
     const { type } = req.body;
-    const userId = req.user.id; // assuming auth middleware
-
-    const user = await User.findById(userId);
-    if (!user) {
-      return res.status(404).json({ message: "User not found" });
-    }
-
-
+    const user = await User.findById(req.userId);
+    
     const log = new InvoiceLog({
-          user: req.user.id,
-          type,
-        });
-
+      user: req.userId,
+      businessId: user.activeBusinessId, // 👈 Log WHICH business created the doc
+      type
+    });
     await log.save();
 
-
-      // const user = req.userDoc; // we can preload this in checkUsage for efficiency
-      // if (type === "invoice") {
-      //   user.usage.invoicesThisMonth++;
-      // } else {
-      //   user.usage.receiptsThisMonth++;
-      // }
-
-        
-
-    // reset usage if new month
+    // Reset and increment logic (remains as you had it)
     const now = new Date();
     if (new Date(user.usage.lastReset).getMonth() !== now.getMonth()) {
       user.usage.invoicesThisMonth = 0;
@@ -358,13 +290,11 @@ router.post("/log", auth, checkUsage,trackActivity, async (req, res) => {
     }
     console.log(user);
 
-    await user.save()
     
-
+    await user.save();
     res.json({ success: true, usage: user.usage });
   } catch (err) {
-    console.error("Error logging usage:", err);
-    res.status(500).json({ success: false, error: "Server error logging usage" });
+    res.status(500).json({ success: false, error: "Server error" });
   }
 });
 

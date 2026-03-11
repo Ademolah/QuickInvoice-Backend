@@ -81,6 +81,13 @@ enterpriseBusinesses: [{
     city: String,
     state: String
   },
+  accountDetails: {
+    bankName: String,
+    accountNumber: String,
+    accountName: String,
+    routingNumber: String, // Optional, based on your region
+    currency: { type: String, default: "NGN" } 
+  },
   // Custom Branding for this specific business
   branding: {
     primaryColor: { type: String, default: "#0028AE" },

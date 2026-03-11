@@ -65,16 +65,36 @@ router.get('/me', auth, trackActivity, async (req, res) => {
 // In your userRoutes.js or wherever your routes are defined
 router.get("/account-details", auth, trackActivity, async (req, res) => {
   try {
-    const userId = req.user.id; // Assuming you have auth middleware
-    const user = await User.findById(userId).select("accountDetails");
-    // console.log(user);
+    const userId = req.userId;
 
+    // 1. Fetch user with both global details AND enterprise businesses
+    const user = await User.findById(userId).select("accountDetails enterpriseBusinesses activeBusinessId");
 
     if (!user) {
       return res.status(404).json({ message: "User not found" });
     }
 
-    res.json({ accountDetails: user.accountDetails });
+    // 2. Default to the main accountDetails (The "Global Parent")
+    let activeDetails = user.accountDetails;
+
+    // 3. Context Check: Are we in a sub-business?
+    if (user.activeBusinessId) {
+      const activeBusiness = user.enterpriseBusinesses.id(user.activeBusinessId);
+      
+      // Check if this specific business has its own account number set
+      // We check for a specific field like 'accountNumber' to ensure it's not just an empty object {}
+      if (activeBusiness && activeBusiness.accountDetails && activeBusiness.accountDetails.accountNumber) {
+        activeDetails = activeBusiness.accountDetails;
+        console.log(`Using Business-Specific Bank Details for: ${activeBusiness.businessName}`);
+      } else {
+        console.log(`Business specific details not found. Falling back to Main Account details.`);
+      }
+    }
+
+    res.json({ 
+      success: true,
+      accountDetails: activeDetails 
+    });
   } catch (error) {
     console.error("Error fetching bank details:", error);
     res.status(500).json({ message: "Server error" });
@@ -122,19 +142,26 @@ router.post('/avatar', auth, trackActivity, upload.single('image'), asyncHandler
   if (!req.file) {
     return res.status(400).json({ message: 'No image file provided' });
   }
+
   const user = await User.findById(req.userId);
   if (!user) return res.status(404).json({ message: 'User not found' });
-  // Upload to Cloudinary via upload_stream to avoid writing to disk
+
+  // 1. Identify the Context (Is this for the Main account or a Sub-Business?)
+  const activeBusiness = user.activeBusinessId 
+    ? user.enterpriseBusinesses.id(user.activeBusinessId) 
+    : null;
+
+  // 2. Cloudinary Upload Helper (remains efficient)
   const bufferStreamUpload = (buffer) =>
     new Promise((resolve, reject) => {
       const stream = cloudinary.uploader.upload_stream(
         {
-          folder: `quickinvoice_ng/avatars`, // optional folder
+          folder: `quickinvoice_ng/${activeBusiness ? 'business_logos' : 'avatars'}`,
           transformation: [
-            { width: 800, height: 800, crop: "limit" }, // limit size
+            { width: 800, height: 800, crop: "limit" },
             { quality: "auto" }
           ],
-          format: 'png', // normalize format (optional)
+          format: 'png',
         },
         (error, result) => {
           if (error) return reject(error);
@@ -143,30 +170,45 @@ router.post('/avatar', auth, trackActivity, upload.single('image'), asyncHandler
       );
       stream.end(buffer);
     });
-  // If user already has a public id -> try deleting old image (best effort)
-  if (user.avatarPublicId) {
+
+  // 3. Clean up OLD image (Context-Aware)
+  const existingPublicId = activeBusiness ? activeBusiness.avatarPublicId : user.avatarPublicId;
+  
+  if (existingPublicId) {
     try {
-      await cloudinary.uploader.destroy(user.avatarPublicId);
+      await cloudinary.uploader.destroy(existingPublicId);
     } catch (err) {
-      console.warn('Failed to delete previous avatar from Cloudinary', err.message || err);
+      console.warn('Cleanup failed', err.message);
     }
   }
-  // Upload new image
+
+  // 4. Upload & Save
   const result = await bufferStreamUpload(req.file.buffer);
-  // Save URL and public_id to user
-  user.avatar = result.secure_url;
-  user.avatarPublicId = result.public_id;
+
+  if (activeBusiness) {
+  // Use your schema's specific 'logo' object structure
+  activeBusiness.logo = {
+    url: result.secure_url,
+    publicId: result.public_id
+  };
+  } else {
+    // Main account still uses 'avatar'
+    user.avatar = result.secure_url;
+    user.avatarPublicId = result.public_id;
+  }
+
   await user.save();
 
-  console.log(`Image uploaded successfully for ${user.name}`);
+  console.log(`Logo/Avatar updated for context: ${activeBusiness ? activeBusiness.businessName : 'Main Account'}`);
 
   res.json({
-    message: 'Avatar uploaded successfully',
-    avatar: user.avatar,
-    avatarPublicId: user.avatarPublicId,
+    message: 'Logo updated successfully',
+    avatar: result.secure_url,
+    avatarPublicId: result.public_id,
   });
-})
-);
+}));
+
+
 
 router.put("/complete-profile", auth, trackActivity, async (req, res) => {
   try {
