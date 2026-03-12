@@ -66,6 +66,82 @@ router.post('/', auth, trackActivity, async (req, res) => {
 
 
 
+//edit invoice 
+
+router.put('/:id', auth, trackActivity, async (req, res) => {
+  try {
+    const {
+      clientName, clientEmail, clientPhone, items,
+      tax, discount, dueDate, notes, outstandingBalance, status
+    } = req.body;
+
+    // 1. Find the invoice and verify ownership
+    const invoice = await Invoice.findById(req.params.id);
+    
+    if (!invoice) return res.status(404).json({ message: 'Invoice not found' });
+    
+    // Security Guard: Ensure the user owns this invoice
+    if (invoice.userId.toString() !== req.userId) {
+      return res.status(403).json({ message: 'Unauthorized access' });
+    }
+
+    // Integrity Guard: Prevent editing if already paid
+    if (invoice.status === 'paid') {
+      return res.status(400).json({ 
+        message: 'Forbidden: Paid invoices cannot be edited for data integrity.' 
+      });
+    }
+
+    // 2. Recalculate math (Never trust the frontend with totals)
+    let subtotal = invoice.subtotal;
+    let total = invoice.total;
+    let computedItems = invoice.items;
+
+    if (items && items.length > 0) {
+      subtotal = items.reduce((s, it) => s + (it.quantity * it.unitPrice), 0);
+      computedItems = items.map(it => ({
+        ...it,
+        total: it.quantity * it.unitPrice
+      }));
+    }
+
+    // Use provided tax/discount or fall back to existing values
+    const finalTax = tax !== undefined ? tax : invoice.tax;
+    const finalDiscount = discount !== undefined ? discount : invoice.discount;
+    total = Math.max(0, subtotal + finalTax - finalDiscount);
+
+    // 3. Perform the Surgical Update
+    const updatedInvoice = await Invoice.findByIdAndUpdate(
+      req.params.id,
+      {
+        $set: {
+          clientName: clientName || invoice.clientName,
+          clientEmail: clientEmail || invoice.clientEmail,
+          clientPhone: clientPhone || invoice.clientPhone,
+          items: computedItems,
+          subtotal,
+          tax: finalTax,
+          discount: finalDiscount,
+          total,
+          outstandingBalance: outstandingBalance !== undefined ? outstandingBalance : invoice.outstandingBalance,
+          status: status || invoice.status,
+          dueDate: dueDate || invoice.dueDate,
+          notes: notes || invoice.notes,
+          lastEditedAt: new Date() // Premium touch: track edit history
+        }
+      },
+      { new: true } // Return the modified document
+    );
+
+    res.json(updatedInvoice);
+  } catch (e) {
+    console.error(e);
+    res.status(500).json({ message: 'Error updating invoice' });
+  }
+});
+
+
+
 
 // List invoices for specific context
 router.get('/', auth, trackActivity, async (req, res) => {
