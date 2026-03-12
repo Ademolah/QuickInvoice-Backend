@@ -142,53 +142,59 @@ router.post(
         
         if (user) {
           const now = new Date();
-          // Logic: If user has active time, stack the new 30 days on top of it
-          const currentExpiry =
-            user.proExpires && user.proExpires > now
-              ? new Date(user.proExpires)
-              : now;
-
-          // Set the new Plan
           const newPlan = meta.type === "enterprise_subscription" ? "enterprise" : "pro";
+
+          // 1. DETERMINE "BASE TIME" TO STACK ON
+          // We check both fields to see if they have ANY active premium time remaining
+          let currentExpiry;
           
+          if (user.enterpriseExpires && user.enterpriseExpires > now) {
+            currentExpiry = new Date(user.enterpriseExpires);
+          } else if (user.proExpires && user.proExpires > now) {
+            currentExpiry = new Date(user.proExpires);
+          } else {
+            currentExpiry = now;
+          }
+
+          // 2. SET NEW PLAN AND CALCULATE NEW EXPIRY
           user.plan = newPlan;
-          user.proExpires = new Date(currentExpiry.getTime() + 30 * 24 * 60 * 60 * 1000);
+          const addedTime = 30 * 24 * 60 * 60 * 1000;
+          const newExpiryDate = new Date(currentExpiry.getTime() + addedTime);
+
+          if (newPlan === "enterprise") {
+            user.enterpriseExpires = newExpiryDate;
+            user.proExpires = null; // Clean up the pro field so the cron targets correctly
+          } else {
+            user.proExpires = newExpiryDate;
+            user.enterpriseExpires = null; // Clean up enterprise field
+          }
           
           await user.save();
 
-
           // 📝 LOG THE TRANSACTION FOR BILLING HISTORY
-          
           try {
             console.log("🛠️ Initializing history log for plan:", newPlan);
 
-            // 1. Explicitly define the amount here to avoid 'undefined' errors
             const transactionAmount = newPlan === "enterprise" ? 10000 : 3000;
 
             const transactionData = {
               userId: user._id,
               name: user.name || "Business Owner",
               plan: newPlan,
-              amount: transactionAmount, // Use the fresh variable
+              amount: transactionAmount,
               reference: meta?.reference || `TXN-${Date.now()}`, 
               date: new Date(),
               status: 'success'
             };
 
-            console.log("📦 Data prepared for Mongo:", transactionData);
-
-            // 2. Create the record
-            const savedTxn = await SubscriptionTransaction.create(transactionData);
-            
-            console.log("✅ SUCCESS: Transaction recorded with ID:", savedTxn._id);
+            await SubscriptionTransaction.create(transactionData);
+            console.log("✅ SUCCESS: Transaction recorded");
           } catch (dbErr) {
-            // This will now catch things like Schema validation errors
             console.error("❌ DATABASE SAVE ERROR:", dbErr.message);
           }
 
-          // Send tailored email based on plan
+          // 📧 SEND TAILORED EMAILS
           if (newPlan === "enterprise") {
-            // Trigger specific Enterprise Welcome Email if you have one
             await sendEnterpriseEmail(user.name, user.email);
             console.log("🚀 ENTERPRISE upgrade successful for:", user.email);
           } else {
@@ -198,7 +204,6 @@ router.post(
         }
         return res.status(200).send("Subscription handled");
       }
-
 
 
       // ================================
