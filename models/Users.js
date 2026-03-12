@@ -108,6 +108,7 @@ usage: {
     lastReset: { type: Date, default: Date.now }
   },
   proExpires: { type: Date, default: null },
+  enterpriseExpires: { type: Date, default: null },
 
   currency: {
   type: String,
