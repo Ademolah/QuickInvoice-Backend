@@ -51,21 +51,39 @@ router.post('/add-business', auth, async (req, res) => {
 // @route   POST /api/enterprise/switch-context
 router.post('/switch-context', auth, async (req, res) => {
   try {
-    const { businessId } = req.body; // Pass null to switch to "Main" account
+    const { businessId } = req.body; 
     
     const user = await User.findById(req.userId);
-    
-    // Safety check: ensure the businessId belongs to this user
+    if (!user) return res.status(404).json({ message: "User not found" });
+
+    // 1. THE ENTERPRISE GUARD
+    // If they are trying to switch to a secondary business (businessId is NOT null)
+    // but they are no longer on the enterprise plan...
+    if (businessId && user.plan !== 'enterprise') {
+      return res.status(403).json({ 
+        message: "Premium Feature: Multi-business switching requires an active Enterprise plan.",
+        code: "UPGRADE_REQUIRED" 
+      });
+    }
+
+    // 2. Safety check: ensure the businessId belongs to this user
     if (businessId) {
        const exists = user.enterpriseBusinesses.id(businessId);
        if (!exists) return res.status(404).json({ message: "Business not found" });
     }
 
+    // 3. Perform Switch
     user.activeBusinessId = businessId;
     await user.save();
 
-    res.json({ success: true, activeBusinessId: user.activeBusinessId });
+    res.json({ 
+      success: true, 
+      activeBusinessId: user.activeBusinessId,
+      plan: user.plan 
+    });
+
   } catch (err) {
+    console.error("Context Switch Error:", err);
     res.status(500).json({ message: "Context switch failed" });
   }
 });
