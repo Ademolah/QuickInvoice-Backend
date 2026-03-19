@@ -130,3 +130,35 @@ exports.getVendorSlug = async (req, res) => {
     });
   }
 };
+
+// In your User Controller (e.g., controllers/userController.js)
+exports.updateBusinessTin = async (req, res) => {
+  try {
+    const { tin } = req.body;
+    const userId = req.userId; // From your auth middleware
+
+    // Validate if necessary (e.g., checking length or characters)
+    if (tin && tin.length < 5) {
+      return res.status(400).json({ message: "Invalid TIN format" });
+    }
+
+    const updatedUser = await User.findByIdAndUpdate(
+      userId,
+      { $set: { tin: tin } },
+      { new: true }
+    );
+
+    if (!updatedUser) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    res.status(200).json({
+      success: true,
+      message: "TIN updated successfully",
+      tin: updatedUser.tin
+    });
+  } catch (error) {
+    console.error("Update TIN Error:", error);
+    res.status(500).json({ message: "Failed to update TIN" });
+  }
+};

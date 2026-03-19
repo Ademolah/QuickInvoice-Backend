@@ -6,6 +6,7 @@ const userSchema = new mongoose.Schema({
   phone: {type: String, required: true, unique: true},
   dialCode: { type: String, required: false }, // e.g. +234, +1
   businessName: { type: String, required: true, unique: true },
+  tin: { type: String, default: "" },
   passwordHash: { type: String, required: true },
   accountDetails: {
   bankName: { type: String },
