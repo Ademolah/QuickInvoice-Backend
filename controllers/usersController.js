@@ -135,30 +135,57 @@ exports.getVendorSlug = async (req, res) => {
 exports.updateBusinessTin = async (req, res) => {
   try {
     const { tin } = req.body;
-    const userId = req.userId; // From your auth middleware
+    const userId = req.userId;
 
-    // Validate if necessary (e.g., checking length or characters)
     if (tin && tin.length < 5) {
       return res.status(400).json({ message: "Invalid TIN format" });
     }
 
-    const updatedUser = await User.findByIdAndUpdate(
-      userId,
-      { $set: { tin: tin } },
-      { new: true }
-    );
+    // 1. Find the user to check their current active context
+    const user = await User.findById(userId);
+    if (!user) return res.status(404).json({ message: "User not found" });
 
-    if (!updatedUser) {
-      return res.status(404).json({ message: "User not found" });
+    let updatedUser;
+
+    // 2. CHECK THE CONTEXT
+    if (user.activeBusinessId) {
+      // 🏗️ ENTERPRISE CONTEXT: Update the TIN inside the sub-business array
+      updatedUser = await User.findOneAndUpdate(
+        { _id: userId, "enterpriseBusinesses._id": user.activeBusinessId },
+        { 
+          $set: { "enterpriseBusinesses.$.tin": tin } 
+        },
+        { new: true }
+      );
+      
+      // Get the specific updated TIN for the response
+      const activeBiz = updatedUser.enterpriseBusinesses.find(
+        b => b._id.toString() === user.activeBusinessId.toString()
+      );
+      
+      return res.status(200).json({
+        success: true,
+        message: `TIN updated for ${activeBiz.businessName}`,
+        tin: activeBiz.tin
+      });
+
+    } else {
+      // 👤 MAIN CONTEXT: Update the top-level TIN
+      updatedUser = await User.findByIdAndUpdate(
+        userId,
+        { $set: { tin: tin } },
+        { new: true }
+      );
+
+      return res.status(200).json({
+        success: true,
+        message: "Main Account TIN updated",
+        tin: updatedUser.tin
+      });
     }
 
-    res.status(200).json({
-      success: true,
-      message: "TIN updated successfully",
-      tin: updatedUser.tin
-    });
   } catch (error) {
-    console.error("Update TIN Error:", error);
+    console.error("Context-Aware TIN Update Error:", error);
     res.status(500).json({ message: "Failed to update TIN" });
   }
 };
