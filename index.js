@@ -260,6 +260,60 @@ app.use(express.json({ limit: '100kb' }));
 app.use(express.urlencoded({ extended: true, limit: '100kb' }));
 app.use(express.json())
 
+// app.use('/api/auth', authRoutes);
+
+// //paystack checkout
+// app.use("/api/checkout", checkoutRoutes)
+// app.use("/api/banks", banksRoutes)
+
+// app.use(auth)
+// app.use(activityTracker);
+
+// // app.use('/api/payments', clientPaymentsRoutes)
+// app.use('/api/inventory', inventoryRoutes);
+// app.use('/api/users', userRoutes);
+
+// app.use('/api/invoices', invoiceRoutes);
+// app.use("/api/clients", clientRoutes);
+// app.use("/api/reports", reportsRoute)
+// app.use('/api/bvn', verifyBvn)
+// app.use('/api/transaction-pin', transactionPin)
+// app.use("/api/expenses", expensesRoutes)
+// app.use('/api/support', supportTicketRoutes)
+// app.use('/api/admin', adminRoutes)
+
+// app.use('/api/deliveries', deliveryRoutes)
+
+
+// //anchor routes
+// app.use('/api/anchor', anchorRoutes)
+// app.use('/api/IncomingTransaction', inboundTransaction)
+// app.use('/api/transactions', transactionsRoute)
+
+// //AI ROUTES
+// app.use('/api/quickbuddy', quickBuddyRoute)
+
+// //MARKET SQUARE
+// app.use('/api/marketsquare', marketSquareRoute)
+// app.use('/api/market-products', marketProducts)
+
+
+
+// //Logistics
+// app.use("/api/shipbubble", shipbubbleRoute)
+
+// app.use('/api/sandbox', require('./routes/sandboxWebhookShip'))
+
+// app.use('/api/vendor', vendorRoute)
+
+// //notification
+// app.use("/api/notifications", notificationRoutes)
+// app.use('/api/bookkeeping', bookKeepingRoutes)
+
+// //enterprise
+// app.use('/api/enterprise', enterpriseRoutes)
+
+
 
 
 // --- 1. THE PUBLIC LAYER (No Auth Required) ---
@@ -291,6 +345,7 @@ app.use(activityTracker);
 app.use('/api/users', userRoutes);
 app.use('/api/invoices', invoiceRoutes);
 app.use("/api/clients", clientRoutes);
+app.use("/api/reports", reportsRoute)
 app.use("/api/expenses", expensesRoutes);
 app.use('/api/transactions', transactionsRoute);
 app.use('/api/bookkeeping', bookKeepingRoutes);
