@@ -103,6 +103,12 @@ activeBusinessId: {
   default: null // null means they are using their "Main" account
 },
 
+role: { 
+    type: String, 
+    enum: ['user', 'admin', 'support'], 
+    default: 'user' 
+  },
+
 usage: {
     invoicesThisMonth: { type: Number, default: 0 },
     receiptsThisMonth: { type: Number, default: 0 },
