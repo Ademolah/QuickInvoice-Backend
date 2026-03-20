@@ -13,7 +13,6 @@ const inventoryRoutes = require('./routes/inventoryRoutes')
 const clientPaymentsRoutes = require('./routes/clientsPayments')
 const quickBuddyRoute = require('./routes/quickbuddy')
 const marketSquareRoute = require('./routes/marketSquareRoute')
-const logisticRoutes = require('./routes/logisticsRoutes')
 const shipbubbleRoute = require('./routes/shipbubbleWebhook')
 const vendorRoute = require('./routes/vendorRoutes')
 const marketProducts = require('./routes/marketProductRoutes')
@@ -21,6 +20,14 @@ const expensesRoutes = require("./routes/expenses")
 const notificationRoutes = require('./routes/notificationRoutes')
 const bookKeepingRoutes = require('./routes/bookKeepingRoutes')
 const enterpriseRoutes = require('./routes/enterprise')
+const supportTicketRoutes = require('./routes/supportTicketRoutes')
+const adminRoutes = require('./routes/admin')
+
+const auth = require('./middleware/authMiddleware')
+const activityTracker = require('./middleware/trackActivity');
+
+const http = require('http'); // Required for Socket.io
+const { Server } = require('socket.io');
 
 
 const startInvoiceReminderCron = require('./utils/invoiceCron')
@@ -69,6 +76,35 @@ const cors = require('cors')
 
 
 const app = express()
+const server = http.createServer(app);
+
+// Initialize Socket.io with CORS safety
+const io = new Server(server, {
+  cors: {
+    origin: ["https://www.quickinvoiceng.com",
+      "https://quickinvoiceng.com",
+      "http://localhost:3000",
+    ],
+    methods: ["GET", "POST"]
+  }
+});
+
+// Make 'io' globally accessible to your controllers
+global.io = io;
+
+io.on('connection', (socket) => {
+  // console.log('⚡ New Connection:', socket.id);
+
+  // Allow users to join a "Room" based on their User ID or Ticket ID
+  socket.on('join_chat', (ticketId) => {
+    socket.join(ticketId);
+    // console.log(`User joined room: ${ticketId}`);
+  });
+
+  socket.on('disconnect', () => {
+    // console.log('🔥 User Disconnected');
+  });
+});
 
 
 //SECURITY MIDDLEWARE
@@ -112,7 +148,7 @@ app.use((req, res, next) => {
   }
 
 
-if (!ua || /curl|wget|python|scraper|bot|crawl|libwww/i.test(ua)) {
+  if (!ua || /curl|wget|python|scraper|bot|crawl|libwww/i.test(ua)) {
     const entry = badActors.get(ip) || { count: 0 };
     entry.count++;
     badActors.set(ip, entry);
@@ -126,25 +162,25 @@ if (!ua || /curl|wget|python|scraper|bot|crawl|libwww/i.test(ua)) {
 
 app.set('trust proxy', 1);
 if (process.env.NODE_ENV !== 'production') {
-    app.use(morgan('dev'));
+  app.use(morgan('dev'));
 }
 
 const speedLimiter = slowDown({
-    windowMs: 60 * 1000, // 1 minute
-    delayAfter: 100, // allow 100 requests per minute, then...
-    delayMs: () => 500, // begin adding 500ms of delay per request above 100
+  windowMs: 60 * 1000, // 1 minute
+  delayAfter: 100, // allow 100 requests per minute, then...
+  delayMs: () => 500, // begin adding 500ms of delay per request above 100
 });
 app.use(speedLimiter);
 
 const globalLimiter = rateLimit({
-    windowMs: 15 * 60 * 1000, // 15 minutes
-    max: 500, // limit each IP to 500 requests per windowMs
-    standardHeaders: true,
-    legacyHeaders: false,
-    message: { message: 'Too many requests from this IP, please try again later.' },
-    // store: new RateLimitRedisStore({ sendCommand: (...args) => redisClient.call(...args) }) // optional
-  });
-  
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 500, // limit each IP to 500 requests per windowMs
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { message: 'Too many requests from this IP, please try again later.' },
+  // store: new RateLimitRedisStore({ sendCommand: (...args) => redisClient.call(...args) }) // optional
+});
+
 app.use(globalLimiter);
 app.disable('x-powered-by');
 app.use(cookieParser());
@@ -152,13 +188,13 @@ app.use(compression());
 app.use(hpp());
 
 app.use((req, res, next) => {
-    // Reject suspicious user agents (example)
-    const ua = (req.get('user-agent') || '').toLowerCase();
-    if (!ua || ua.length < 10) {
-      // optionally log and reject
-      // return res.status(400).json({ message: 'Bad request' });
-    }
-    next();
+  // Reject suspicious user agents (example)
+  const ua = (req.get('user-agent') || '').toLowerCase();
+  if (!ua || ua.length < 10) {
+    // optionally log and reject
+    // return res.status(400).json({ message: 'Bad request' });
+  }
+  next();
 });
 
 app.use((req, res, next) => {
@@ -195,8 +231,8 @@ connectDb()
 
 const allowedOrigins = [
   "https://www.quickinvoiceng.com",
-  "https://quickinvoiceng.com", 
-   "http://localhost:3000",
+  "https://quickinvoiceng.com",
+  "http://localhost:3000",
   "https://quick-invoice-frontend-two.vercel.app",
   "https://test-quickinvoice-frontend.vercel.app",
   "https://www.test-quickinvoice-frontend.vercel.app"
@@ -215,6 +251,8 @@ app.use(cors({
 
 // app.use('/api/payments/nfcWebhook', express.raw({ type: 'application/json' }));
 
+
+
 app.use('/api/payments', paymentRoute)
 
 
@@ -224,53 +262,61 @@ app.use(express.json())
 
 
 
-// app.use('/api/payments', clientPaymentsRoutes)
-app.use('/api/inventory', inventoryRoutes);
-app.use('/api/users', userRoutes);
+// --- 1. THE PUBLIC LAYER (No Auth Required) ---
+// Login, Registration, and Password Reset
 app.use('/api/auth', authRoutes);
+
+// External Webhooks (These services don't send your JWT token!)
+app.use('/api/sandbox', require('./routes/sandboxWebhookShip'));
+app.use('/api/IncomingTransaction', inboundTransaction);
+
+// Checkout & Onboarding Support
+app.use("/api/checkout", checkoutRoutes);
+app.use("/api/banks", banksRoutes); // Fixes the Settings/Onboarding 401s
+
+// Marketplace (If you want guests to browse before logging in)
+app.use('/api/marketsquare', marketSquareRoute);
+app.use('/api/market-products', marketProducts);
+
+
+// --- 2. THE SECURITY GATE (The "Checkpoint") ---
+// Everything below this line will be identified and tracked in the Audit Feed
+app.use(auth); 
+app.use(activityTracker);
+
+
+// --- 3. THE PRIVATE LAYER (Auth & Tracking ACTIVE) ---
+
+// Core User & Finance
+app.use('/api/users', userRoutes);
 app.use('/api/invoices', invoiceRoutes);
 app.use("/api/clients", clientRoutes);
-app.use("/api/reports", reportsRoute)
-app.use('/api/bvn', verifyBvn)
-app.use('/api/transaction-pin', transactionPin)
-app.use("/api/expenses", expensesRoutes)
+app.use("/api/expenses", expensesRoutes);
+app.use('/api/transactions', transactionsRoute);
+app.use('/api/bookkeeping', bookKeepingRoutes);
 
-app.use('/api/deliveries', deliveryRoutes)
+// Verification & Security
+app.use('/api/bvn', verifyBvn);
+app.use('/api/transaction-pin', transactionPin);
 
+// Operations & Admin
+app.use('/api/admin', adminRoutes);
+app.use('/api/support', supportTicketRoutes);
+app.use('/api/inventory', inventoryRoutes);
+app.use("/api/notifications", notificationRoutes);
 
-//anchor routes
-app.use('/api/anchor', anchorRoutes)
-app.use('/api/IncomingTransaction', inboundTransaction)
-app.use('/api/transactions', transactionsRoute)
+// Logistics & External Integrations
+app.use('/api/deliveries', deliveryRoutes);
+app.use("/api/shipbubble", shipbubbleRoute);
+app.use('/api/vendor', vendorRoute);
+app.use('/api/anchor', anchorRoutes);
+app.use('/api/enterprise', enterpriseRoutes);
 
-//AI ROUTES
-app.use('/api/quickbuddy', quickBuddyRoute)
-
-//MARKET SQUARE
-app.use('/api/marketsquare', marketSquareRoute)
-app.use('/api/market-products', marketProducts)
-
-//paystack checkout
-app.use("/api/checkout", checkoutRoutes)
-app.use("/api/banks", banksRoutes)
-
-//Logistics
-app.use("/api/logistics", logisticRoutes)
-app.use("/api/shipbubble", shipbubbleRoute)
-
-app.use('/api/sandbox', require('./routes/sandboxWebhookShip'))
-
-app.use('/api/vendor', vendorRoute)
-
-//notification
-app.use("/api/notifications", notificationRoutes)
-app.use('/api/bookkeeping', bookKeepingRoutes)
-
-//enterprise
-app.use('/api/enterprise', enterpriseRoutes)
+// AI Services
+app.use('/api/quickbuddy', quickBuddyRoute);
 
 
 
-app.listen(4000, ()=>{
-    console.log('listening on port 4000');
-})
+server.listen(4000, () => {
+  console.log('🚀 Premium Server (with Socket.io) listening on port 4000');
+});
