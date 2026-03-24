@@ -38,4 +38,28 @@ router.get('/today', async (req, res) => {
   }
 });
 
+
+// Route: /api/pos/receipt/:id
+router.get("/receipt/:id", async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    // 1. Find the sale by receiptNumber or _id
+    // We use findOne so anyone with the unique ID can view it
+    const sale = await Sale.findOne({ 
+      $or: [{ receiptNumber: id }, { _id: id }] 
+    }).populate("items.productId", "name"); // Optional: if you need extra product info
+
+    if (!sale) {
+      return res.status(404).json({ success: false, message: "Receipt not found" });
+    }
+
+    // 2. Return the sale data
+    res.json({ success: true, sale });
+  } catch (error) {
+    console.error("Error fetching public receipt:", error);
+    res.status(500).json({ success: false, message: "Server error" });
+  }
+});
+
 module.exports = router;
