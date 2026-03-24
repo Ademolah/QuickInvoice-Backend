@@ -278,6 +278,7 @@ app.use("/api/banks", banksRoutes); // Fixes the Settings/Onboarding 401s
 // Marketplace (If you want guests to browse before logging in)
 app.use('/api/marketsquare', marketSquareRoute);
 app.use('/api/market-products', marketProducts);
+app.use('/api/pos', posRoutes)
 
 
 // --- 2. THE SECURITY GATE (The "Checkpoint") ---
@@ -296,7 +297,7 @@ app.use("/api/reports", reportsRoute)
 app.use("/api/expenses", expensesRoutes);
 app.use('/api/transactions', transactionsRoute);
 app.use('/api/bookkeeping', bookKeepingRoutes);
-app.use('/api/pos', posRoutes)
+
 
 // Verification & Security
 app.use('/api/bvn', verifyBvn);
