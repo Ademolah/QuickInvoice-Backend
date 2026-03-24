@@ -44,20 +44,32 @@ router.get("/receipt/:id", async (req, res) => {
   try {
     const { id } = req.params;
 
-    // 1. Find the sale by receiptNumber or _id
-    // We use findOne so anyone with the unique ID can view it
-    const sale = await Sale.findOne({ 
-      $or: [{ receiptNumber: id }, { _id: id }] 
-    }).populate("items.productId", "name"); // Optional: if you need extra product info
+    // 1. Create a dynamic query object
+    let query = {};
 
-    if (!sale) {
-      return res.status(404).json({ success: false, message: "Receipt not found" });
+    // 2. Logic: If it starts with 'QN-', it's definitely a receipt number
+    if (id.startsWith("QN-")) {
+      query = { receiptNumber: id };
+    } 
+    // Otherwise, check if it's a valid 24-character MongoDB ObjectId
+    else if (id.match(/^[0-9a-fA-F]{24}$/)) {
+      query = { _id: id };
+    } 
+    // If it's neither, it's a bad request
+    else {
+      return res.status(400).json({ success: false, message: "Invalid Receipt ID format" });
     }
 
-    // 2. Return the sale data
+    // 3. Execute the search
+    const sale = await Sale.findOne(query);
+
+    if (!sale) {
+      return res.status(404).json({ success: false, message: "Receipt not found in database" });
+    }
+
     res.json({ success: true, sale });
   } catch (error) {
-    console.error("Error fetching public receipt:", error);
+    console.error("Backend Receipt Error:", error);
     res.status(500).json({ success: false, message: "Server error" });
   }
 });
