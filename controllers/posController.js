@@ -1,6 +1,7 @@
 const mongoose = require('mongoose');
 const Sale = require('../models/Sale');
 const Product = require('../models/Products');
+const User = require('../models/Users')
 
 exports.processPOSSale = async (req, res) => {
   const session = await mongoose.startSession();
@@ -8,6 +9,7 @@ exports.processPOSSale = async (req, res) => {
 
   try {
     const { items, paymentDetails, totalAmount } = req.body;
+    const user = await User.findById(req.userId)
 
     // 1. GENERATE UNIQUE RECEIPT NUMBER
     const receiptNumber = `QN-POS-${Date.now()}`;
@@ -32,6 +34,7 @@ exports.processPOSSale = async (req, res) => {
       cashierId: req.userId,
       items,
       totalAmount,
+      businessId: user.activeBusinessId,
       paymentDetails
     }], { session });
 
@@ -82,6 +85,7 @@ exports.processPOSSale = async (req, res) => {
 //       cashierId: req.userId,
 //       items,
 //       totalAmount,
+//       businessId: user.activeBusinessId,
 //       paymentDetails
 //     }]); // Remove { session }
 
