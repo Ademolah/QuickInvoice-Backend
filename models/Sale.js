@@ -1,8 +1,6 @@
 const mongoose = require('mongoose');
 
 
-
-
 const SaleSchema = new mongoose.Schema({
   receiptNumber: { type: String, unique: true, required: true }, // e.g., QN-POS-2026-0001
   cashierId: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
@@ -14,6 +12,13 @@ const SaleSchema = new mongoose.Schema({
     subtotal: { type: Number, required: true }
   }],
   totalAmount: { type: Number, required: true },
+
+  businessId: { 
+      type: mongoose.Schema.Types.ObjectId, 
+      ref: 'User.enterpriseBusinesses',
+      default: null // null means it belongs to the "Main" account
+    },
+
   paymentDetails: {
     method: { type: String, enum: ['Cash', 'POS-Card', 'Transfer'], required: true },
     amountTendered: Number, // What the customer gave (for Cash)
