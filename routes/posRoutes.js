@@ -7,7 +7,7 @@ const Sale = require('../models/Sale')
 router.post('/process', auth, processPOSSale);
 
 // GET /api/pos/today
-router.get('/today', async (req, res) => {
+router.get('/today',auth, async (req, res) => {
   try {
     // 1. Get the current date and force it to the very start of the day in UTC
     const now = new Date();
