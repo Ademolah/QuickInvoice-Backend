@@ -22,9 +22,11 @@ exports.processPOSSale = async (req, res) => {
       if (product.stock < item.quantity) {
         throw new Error(`Insufficient stock for ${product.name}. Remaining: ${product.stockQuantity}`);
       }
-
+       
+      const saleValue = item.quantity * product.price;
       // Decrement stock
       product.stock -= item.quantity;
+      product.sold = (product.sold || 0) + saleValue;
       await product.save({ session });
     }
 
@@ -66,6 +68,7 @@ exports.processPOSSale = async (req, res) => {
 //   try {
 //     const { items, paymentDetails, totalAmount } = req.body;
 //     const receiptNumber = `QN-POS-${Date.now()}`;
+//     const user = await User.findById(req.userId)
 
 //     for (const item of items) {
 //       // Remove .session(session)
@@ -76,7 +79,11 @@ exports.processPOSSale = async (req, res) => {
 //         throw new Error(`Insufficient stock for ${product.name}`);
 //       }
 
+//       const saleValue = item.quantity * product.price;
+
+//       // 2. Update Stock (Decrease) and Sold Value (Increase)
 //       product.stock -= item.quantity;
+//       product.sold = (product.sold || 0) + saleValue;
 //       await product.save(); // Remove { session }
 //     }
 

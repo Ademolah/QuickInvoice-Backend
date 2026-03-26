@@ -67,6 +67,7 @@ const productSchema = new mongoose.Schema(
   "Other"]},
    
   description: { type: String, trim: true },
+  sold: { type: Number, default: 0 },
 
   businessId: { 
       type: mongoose.Schema.Types.ObjectId, 
