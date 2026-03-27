@@ -74,4 +74,48 @@ router.get("/receipt/:id", async (req, res) => {
   }
 });
 
+router.get("/sales-summary", auth, async (req, res) => {
+  try {
+    const { range } = req.query; // 'weekly', 'monthly', 'yearly'
+    let startDate = new Date();
+
+    if (range === 'weekly') startDate.setDate(startDate.getDate() - 7);
+    else if (range === 'monthly') startDate.setMonth(startDate.getMonth() - 1);
+    else if (range === 'yearly') startDate.setFullYear(startDate.getFullYear() - 1);
+
+    const sales = await Sale.find({
+      cashierId: req.userId,
+      createdAt: { $gte: startDate }
+    });
+
+    // 🚀 THE MAGIC: Aggregate items across all sales
+    const reportData = {};
+    let grandTotal = 0;
+
+    sales.forEach(sale => {
+      grandTotal += sale.totalAmount;
+      sale.items.forEach(item => {
+        if (!reportData[item.productId]) {
+          reportData[item.productId] = { 
+            name: item.name, 
+            quantity: 0, 
+            revenue: 0 
+          };
+        }
+        reportData[item.productId].quantity += item.quantity;
+        reportData[item.productId].revenue += (item.quantity * item.unitPrice);
+      });
+    });
+
+    res.json({ 
+      success: true, 
+      summary: Object.values(reportData), 
+      grandTotal,
+      period: range 
+    });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+});
+
 module.exports = router;
