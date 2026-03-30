@@ -16,7 +16,7 @@ router.get('/today',auth, async (req, res) => {
 
     // 2. Query with the explicit range
     const sales = await Sale.find({
-      cashierId: req.userId, // 👈 Make sure this matches your data (your log shows cashierId)
+      cashierId: req.userId, // 
       createdAt: { 
         $gte: startOfToday, 
         $lte: endOfToday 
