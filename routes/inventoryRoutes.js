@@ -12,7 +12,7 @@ const router = express.Router();
  */
 router.post("/", auth, trackActivity, async (req, res) => {
   try {
-    const { name, price, stock, sku, category, description, active } = req.body;
+    const { name, price, stock, sku, category, description, active, barcode } = req.body;
     if (!name || price == null || stock == null) {
       return res.status(400).json({ message: "Name, price and stock are required" });
     }
@@ -31,6 +31,19 @@ router.post("/", auth, trackActivity, async (req, res) => {
         });
       }
     }
+
+    // 🚀 AUTO-BARCODE GENERATION LOGIC
+    // We generate a 12-digit unique numeric string if none is provided
+    let finalBarcode = barcode ? String(barcode).trim() : null;
+    
+    if (!finalBarcode) {
+      // Format: YearMonthDay + Random 4 digits (e.g., 202603318821)
+      const datePart = new Date().toISOString().slice(2,10).replace(/-/g, '');
+      const randomPart = Math.floor(1000 + Math.random() * 9000);
+      finalBarcode = `${datePart}${randomPart}`;
+    }
+
+
     //  Create product
     const payload = {
       userId: req.userId,
@@ -40,6 +53,7 @@ router.post("/", auth, trackActivity, async (req, res) => {
       category: category ? String(category).trim() : "General",
       stock: Math.max(0, parseInt(stock, 10)),
       sku: sku ? String(sku).trim() : undefined,
+      barcode: finalBarcode,
       description,
       active: active !== undefined ? !!active : true,
     };
