@@ -69,6 +69,12 @@ const productSchema = new mongoose.Schema(
   description: { type: String, trim: true },
   sold: { type: Number, default: 0 },
 
+  barcode: {
+    type: String,
+    unique: true, // Crucial for scanning accuracy
+    sparse: true  // Allows existing products to be null initially
+  },
+
   businessId: { 
       type: mongoose.Schema.Types.ObjectId, 
       ref: 'User.enterpriseBusinesses',
