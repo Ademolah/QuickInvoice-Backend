@@ -3,35 +3,40 @@ const User = require("../models/Users")
 
 const getClients = async (req, res) => {
   try {
-    // Fetch invoices for logged-in user
-    const user = await User.findById(req.userId)
+    const user = await User.findById(req.userId);
+    if (!user) return res.status(404).json({ message: "User not found" });
 
+    // 1. Fetch ALL recent invoices for this specific active business
+    // We sort by createdAt DESCENDING to get new clients first
     const invoices = await Invoice.find({ 
       userId: req.userId,
-      businessId: user.activeBusinessId // 
+      businessId: user.activeBusinessId 
     })
-      .select("clientName clientEmail clientPhone status")
-      .limit(50); // just in case before deduplication
+    .sort({ createdAt: -1 }) 
+    .select("clientName clientEmail clientPhone status createdAt");
 
-    // Deduplicate by email
-    const seen = new Set();
-    const clients = [];
+    // 2. Deduplicate using a Map (better than Set for objects)
+    const clientMap = new Map();
+    
     for (let inv of invoices) {
-      if (!seen.has(inv.clientEmail)) {
-        seen.add(inv.clientEmail);
-        clients.push({
+      // Use email as the unique key
+      if (!clientMap.has(inv.clientEmail)) {
+        clientMap.set(inv.clientEmail, {
           name: inv.clientName,
           email: inv.clientEmail,
           phone: inv.clientPhone,
           paid_status: inv.status,
+          date: inv.createdAt
         });
       }
     }
 
-    // Limit final result to 10
-    res.json(clients.slice(0, 10));
+    // 3. Convert Map values to Array and limit to the top 20
+    const clients = Array.from(clientMap.values()).slice(0, 20);
+
+    res.json(clients);
   } catch (err) {
-    console.error(err);
+    console.error("Client Fetch Error:", err);
     res.status(500).json({ message: "Server error fetching clients" });
   }
 };
