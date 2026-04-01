@@ -6,6 +6,7 @@ const getReports  = require("../controllers/reportsController")
 const auth = require("../middleware/authMiddleware")
 const trackActivity = require('../middleware/trackActivity')
 const Invoice = require("../models/Invoice")
+const User = require("../models/Users")
 
 const router = express.Router();
 
@@ -16,6 +17,7 @@ router.get('/', auth,trackActivity, getReports)
 router.get("/statement", auth, async (req, res) => {
   try {
     const { month } = req.query; // format: YYYY-MM
+    const user = await User.findById(req.userId)
     if (!month) {
       return res.status(400).json({ message: "Month is required" });
     }
