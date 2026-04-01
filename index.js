@@ -279,6 +279,7 @@ app.use("/api/banks", banksRoutes); // Fixes the Settings/Onboarding 401s
 app.use('/api/marketsquare', marketSquareRoute);
 app.use('/api/market-products', marketProducts);
 app.use('/api/pos', posRoutes)
+app.use("/api/clients", clientRoutes);
 
 
 // --- 2. THE SECURITY GATE (The "Checkpoint") ---
@@ -292,7 +293,6 @@ app.use(activityTracker);
 // Core User & Finance
 app.use('/api/users', userRoutes);
 app.use('/api/invoices', invoiceRoutes);
-app.use("/api/clients", clientRoutes);
 app.use("/api/reports", reportsRoute)
 app.use("/api/expenses", expensesRoutes);
 app.use('/api/transactions', transactionsRoute);
