@@ -93,7 +93,7 @@ const checkUsage = async (req, res, next) => {
 
     // 4. Limit Check (Only reached by non-pro users)
     const totalUsage = (user.usage.invoicesThisMonth || 0) + (user.usage.receiptsThisMonth || 0);
-    const LIMIT = 15;
+    const LIMIT = 12;
     
     if (totalUsage >= LIMIT) {
       return res.status(403).json({ 

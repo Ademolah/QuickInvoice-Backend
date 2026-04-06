@@ -323,5 +323,5 @@ app.use('/api/quickbuddy', quickBuddyRoute);
 
 
 server.listen(4000, () => {
-  console.log('🚀 Premium Server (with Socket.io) listening on port 4000');
+  console.log('🚀 QuickInvoice Server (with Socket.io) listening on port 4000');
 });
