@@ -7,26 +7,38 @@ const Sale = require('../models/Sale')
 router.post('/process', auth, syncPOSSales);
 
 // GET /api/pos/today
-router.get('/today',auth, async (req, res) => {
+
+router.get('/today', auth, async (req, res) => {
   try {
-    // 1. Get the current date and force it to the very start of the day in UTC
+    // 1. Capture businessId from the URL query (?businessId=...)
+    const { businessId } = req.query;
+
     const now = new Date();
     const startOfToday = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate(), 0, 0, 0, 0));
     const endOfToday = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate(), 23, 59, 59, 999));
 
-    // 2. Query with the explicit range
-    const sales = await Sale.find({
-      cashierId: req.userId, // 
+    // 2. Build a dynamic query
+    let query = {
       createdAt: { 
         $gte: startOfToday, 
         $lte: endOfToday 
       }
-    }).sort({ createdAt: -1 });
+    };
+
+    // LOGIC: If a specific business is selected, filter by that ID.
+    // If not, fallback to cashierId (this maintains backward compatibility).
+    if (businessId && businessId !== 'null' && businessId !== 'undefined') {
+      query.businessId = businessId;
+    } else {
+      query.cashierId = req.userId;
+    }
+
+    const sales = await Sale.find(query).sort({ createdAt: -1 });
 
     // 3. Calculate total
     const totalRevenue = sales.reduce((sum, sale) => sum + sale.totalAmount, 0);
 
-    console.log(`Found ${sales.length} sales for UTC Date: ${startOfToday.toISOString()}`);
+    console.log(`Branch: ${businessId || 'Main'} | Found ${sales.length} sales`);
 
     res.json({
       success: true,
