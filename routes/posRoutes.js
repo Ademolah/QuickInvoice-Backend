@@ -1,10 +1,10 @@
 // routes/posRoutes.js
 const router = require('express').Router();
-const { processPOSSale, } = require('../controllers/posController');
+const { syncPOSSales, } = require('../controllers/posController');
 const auth = require('../middleware/authMiddleware');
 const Sale = require('../models/Sale')
 
-router.post('/process', auth, processPOSSale);
+router.post('/process', auth, syncPOSSales);
 
 // GET /api/pos/today
 router.get('/today',auth, async (req, res) => {

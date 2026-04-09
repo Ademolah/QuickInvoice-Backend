@@ -2,6 +2,22 @@ const mongoose = require('mongoose');
 
 
 const SaleSchema = new mongoose.Schema({
+  // --- OFFLINE SYNC CORE ---
+  // clientTxnId: The 'Idempotency Key'. Generated on the frontend.
+  // This prevents duplicate sales if the sync request is sent multiple times.
+  clientTxnId: { 
+    type: String, 
+    unique: true, 
+    required: true,
+    index: true 
+  },
+  
+  // offlineCreatedAt: The actual time the sale happened in the shop.
+  // We use this for financial reports instead of the server's 'createdAt'.
+  offlineCreatedAt: { type: Date, required: true },
+
+  isOfflineSynced: { type: Boolean, default: false },
+
   receiptNumber: { type: String, unique: true, required: true }, // e.g., QN-POS-2026-0001
   cashierId: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
   items: [{
