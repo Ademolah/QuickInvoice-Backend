@@ -24,6 +24,7 @@ const supportTicketRoutes = require('./routes/supportTicketRoutes')
 const adminRoutes = require('./routes/admin')
 const posRoutes = require('./routes/posRoutes')
 
+
 const auth = require('./middleware/authMiddleware')
 const activityTracker = require('./middleware/trackActivity');
 
@@ -232,8 +233,8 @@ connectDb()
 
 const allowedOrigins = [
   "https://www.quickinvoiceng.com",
-  // "https://quickinvoiceng.com",
-  "http://localhost:3000",
+  "https://quickinvoiceng.com",
+  // "http://localhost:3000",
   "https://quick-invoice-frontend-two.vercel.app",
   "https://test-quickinvoice-frontend.vercel.app",
   "https://www.test-quickinvoice-frontend.vercel.app"
@@ -282,9 +283,11 @@ app.use('/api/pos', posRoutes)
 
 
 
+
+
 // --- 2. THE SECURITY GATE (The "Checkpoint") ---
 // Everything below this line will be identified and tracked in the Audit Feed
-app.use(auth); 
+app.use(auth);
 app.use(activityTracker);
 
 

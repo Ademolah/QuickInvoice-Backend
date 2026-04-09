@@ -3,63 +3,143 @@ const Sale = require('../models/Sale');
 const Product = require('../models/Products');
 const User = require('../models/Users')
 
-exports.processPOSSale = async (req, res) => {
-  const session = await mongoose.startSession();
-  session.startTransaction();
+// exports.processPOSSale = async (req, res) => {
+//   const session = await mongoose.startSession();
+//   session.startTransaction();
 
-  try {
-    const { items, paymentDetails, totalAmount } = req.body;
-    const user = await User.findById(req.userId)
+//   try {
+//     const { items, paymentDetails, totalAmount } = req.body;
+//     const user = await User.findById(req.userId)
 
-    // 1. GENERATE UNIQUE RECEIPT NUMBER
-    const receiptNumber = `QN-POS-${Date.now()}`;
+//     // 1. GENERATE UNIQUE RECEIPT NUMBER
+//     const receiptNumber = `QN-POS-${Date.now()}`;
 
-    // 2. VALIDATE & UPDATE INVENTORY (The Security Core)
-    for (const item of items) {
-      const product = await Product.findById(item.productId).session(session);
+//     // 2. VALIDATE & UPDATE INVENTORY (The Security Core)
+//     for (const item of items) {
+//       const product = await Product.findById(item.productId).session(session);
       
-      if (!product) throw new Error(`Product ${item.name} not found.`);
-      if (product.stock < item.quantity) {
-        throw new Error(`Insufficient stock for ${product.name}. Remaining: ${product.stockQuantity}`);
-      }
+//       if (!product) throw new Error(`Product ${item.name} not found.`);
+//       if (product.stock < item.quantity) {
+//         throw new Error(`Insufficient stock for ${product.name}. Remaining: ${product.stockQuantity}`);
+//       }
        
-      const saleValue = item.quantity * product.price;
-      // Decrement stock
-      product.stock -= item.quantity;
-      product.sold = (product.sold || 0) + saleValue;
-      await product.save({ session });
-    }
+//       const saleValue = item.quantity * product.price;
+//       // Decrement stock
+//       product.stock -= item.quantity;
+//       product.sold = (product.sold || 0) + saleValue;
+//       await product.save({ session });
+//     }
 
-    // 3. CREATE THE SALE RECORD
-    const newSale = await Sale.create([{
-      receiptNumber,
-      cashierId: req.userId,
-      items,
-      totalAmount,
-      businessId: user.activeBusinessId,
-      paymentDetails
-    }], { session });
+//     // 3. CREATE THE SALE RECORD
+//     const newSale = await Sale.create([{
+//       receiptNumber,
+//       cashierId: req.userId,
+//       items,
+//       totalAmount,
+//       businessId: user.activeBusinessId,
+//       paymentDetails
+//     }], { session });
 
-    // 4. COMMIT EVERYTHING
-    await session.commitTransaction();
-    session.endSession();
+//     // 4. COMMIT EVERYTHING
+//     await session.commitTransaction();
+//     session.endSession();
 
-    // 🚀 REAL-TIME EMIT: Update Admin Dashboard instantly
-    global.io.emit('new_pos_sale', {
-      amount: totalAmount,
-      cashier: req.user.name,
-      time: new Date()
-    });
+//     // 🚀 REAL-TIME EMIT: Update Admin Dashboard instantly
+//     global.io.emit('new_pos_sale', {
+//       amount: totalAmount,
+//       cashier: req.user.name,
+//       time: new Date()
+//     });
 
-    res.status(201).json({ success: true, sale: newSale[0] });
+//     res.status(201).json({ success: true, sale: newSale[0] });
 
-  } catch (error) {
-    // 🛑 ROLLBACK: If anything failed, inventory is NOT decreased
-    await session.abortTransaction();
-    session.endSession();
-    res.status(400).json({ success: false, message: error.message });
+//   } catch (error) {
+//     // 🛑 ROLLBACK: If anything failed, inventory is NOT decreased
+//     await session.abortTransaction();
+//     session.endSession();
+//     res.status(400).json({ success: false, message: error.message });
+//   }
+// };
+
+
+
+
+exports.syncPOSSales = async (req, res) => {
+  const { sales } = req.body; 
+  
+  // 1. SAFETY FIRST (From your local version)
+  if (!sales || !Array.isArray(sales)) {
+    return res.status(400).json({ success: false, message: "Payload must be an array of sales." });
   }
+
+  const user = await User.findById(req.userId);
+  const results = { synced: [], duplicates: [], errors: [] };
+
+  for (const saleData of sales) {
+    const session = await mongoose.startSession();
+    session.startTransaction();
+
+    try {
+      // 2. IDEMPOTENCY CHECK
+      const existing = await Sale.findOne({ clientTxnId: saleData.clientTxnId });
+      if (existing) {
+        results.duplicates.push(saleData.clientTxnId);
+        await session.abortTransaction();
+        continue;
+      }
+
+      // 3. INVENTORY UPDATE (Atomic)
+      for (const item of saleData.items) {
+        const product = await Product.findById(item.productId).session(session);
+        if (!product) throw new Error(`Product ${item.name} not found.`);
+
+        const saleValue = item.quantity * item.unitPrice;
+        product.stock -= item.quantity;
+        product.sold = (product.sold || 0) + saleValue;
+        
+        await product.save({ session });
+      }
+
+      // 4. RECORD THE SALE (Explicit & Safe)
+      const createdSales = await Sale.create([{
+        ...saleData,
+        status: 'Completed', // Force status consistency
+        cashierId: req.userId,
+        businessId: user.activeBusinessId || null,
+        offlineCreatedAt: saleData.offlineCreatedAt || new Date(), 
+        isOfflineSynced: true 
+      }], { session });
+
+      const finalSale = createdSales[0];
+
+      await session.commitTransaction();
+      results.synced.push(finalSale); // Return full doc for frontend Dexie sync
+
+      // 5. REAL-TIME NOTIFICATION
+      if (global.io) {
+        global.io.emit('new_pos_sale', {
+          amount: finalSale.totalAmount,
+          cashier: user.name,
+          time: finalSale.offlineCreatedAt
+        });
+      }
+
+    } catch (error) {
+      if (session.inTransaction()) await session.abortTransaction();
+      results.errors.push({ id: saleData.clientTxnId, message: error.message });
+    } finally {
+      session.endSession();
+    }
+  }
+
+  res.status(200).json({
+    success: results.errors.length === 0,
+    summary: results,
+    // Helping the single-sale 'handleFinalize' function
+    sale: results.synced.length > 0 ? results.synced[results.synced.length - 1] : null
+  });
 };
+
 
 // exports.processPOSSale = async (req, res) => {
 // //   const session = await mongoose.startSession();
@@ -109,5 +189,88 @@ exports.processPOSSale = async (req, res) => {
 //   }
 // };
 
+// exports.syncPOSSales = async (req, res) => {
+//   try {
+//     const { sales } = req.body; // We expect an array of sales
+//     const user = await User.findById(req.userId);
+
+//     if (!sales || !Array.isArray(sales)) {
+//       return res.status(400).json({ success: false, message: "Payload must be an array of sales." });
+//     }
+
+//     const results = { synced: [], duplicates: [], errors: [] };
+
+//     for (const saleData of sales) {
+//       try {
+//         // 1. IDEMPOTENCY CHECK
+//         // Check if this specific transaction ID already exists in our DB
+//         const existingSale = await Sale.findOne({ clientTxnId: saleData.clientTxnId });
+        
+//         if (existingSale) {
+//           results.duplicates.push(saleData.clientTxnId);
+//           continue; // Skip to next sale in the array
+//         }
+
+//         // 2. INVENTORY UPDATES (Manual loop since no Transactions)
+//         for (const item of saleData.items) {
+//           const product = await Product.findById(item.productId);
+          
+//           if (product) {
+//             const saleValue = item.quantity * item.unitPrice;
+            
+//             // PRO LOGIC: Decrement stock (even if it goes negative)
+//             // This ensures the database reflects the physical reality of the shop
+//             product.stock -= item.quantity;
+//             product.sold = (product.sold || 0) + saleValue;
+            
+//             await product.save();
+//           }
+//         }
+
+//         // 3. CREATE THE SALE RECORD
+//         // We use the receiptNumber and dates generated by the frontend
+//         const newSale = await Sale.create({
+//           clientTxnId: saleData.clientTxnId,
+//           receiptNumber: saleData.receiptNumber, 
+//           cashierId: req.userId,
+//           items: saleData.items,
+//           totalAmount: saleData.totalAmount,
+//           businessId: user.activeBusinessId || null,
+//           paymentDetails: saleData.paymentDetails,
+//           offlineCreatedAt: saleData.offlineCreatedAt || new Date(),
+//           isOfflineSynced: true,
+//           status: 'Completed'
+//         });
+
+//         results.synced.push(saleData.clientTxnId);
+
+//         // 4. REAL-TIME EMIT
+//         if (global.io) {
+//           global.io.emit('new_pos_sale', { 
+//             amount: saleData.totalAmount,
+//             cashier: user.name,
+//             time: saleData.offlineCreatedAt 
+//           });
+//         }
+
+//       } catch (saleError) {
+//         console.error(`Error processing sale ${saleData.clientTxnId}:`, saleError);
+//         results.errors.push({ 
+//           id: saleData.clientTxnId, 
+//           message: saleError.message 
+//         });
+//       }
+//     }
+
+//     // Return the summary of the batch operation
+//     res.status(200).json({
+//       success: results.errors.length === 0,
+//       summary: results
+//     });
+
+//   } catch (globalError) {
+//     res.status(500).json({ success: false, message: globalError.message });
+//   }
+// };
 
 
