@@ -23,6 +23,7 @@ const enterpriseRoutes = require('./routes/enterprise')
 const supportTicketRoutes = require('./routes/supportTicketRoutes')
 const adminRoutes = require('./routes/admin')
 const posRoutes = require('./routes/posRoutes')
+const workSummaryRoutes = require('./routes/workSummary')
 
 
 const auth = require('./middleware/authMiddleware')
@@ -234,7 +235,7 @@ connectDb()
 const allowedOrigins = [
   "https://www.quickinvoiceng.com",
   "https://quickinvoiceng.com",
-  "http://localhost:3000",
+  // "http://localhost:3000",
   "https://quick-invoice-frontend-two.vercel.app",
   "https://test-quickinvoice-frontend.vercel.app",
   "https://www.test-quickinvoice-frontend.vercel.app"
@@ -296,6 +297,7 @@ app.use(activityTracker);
 // Core User & Finance
 app.use('/api/users', userRoutes);
 app.use('/api/invoices', invoiceRoutes);
+app.use('/api/summaries', workSummaryRoutes);
 app.use("/api/reports", reportsRoute)
 app.use("/api/clients", clientRoutes);
 app.use("/api/expenses", expensesRoutes);
