@@ -19,6 +19,7 @@ exports.createWorkSummary = async (req, res) => {
     // 2. Create the summary
     const summary = await WorkSummary.create({
       userId: req.userId,
+      businessId: req.user.activeBusinessId,
       projectTitle,
       clientName,
       workDescription,
@@ -28,6 +29,7 @@ exports.createWorkSummary = async (req, res) => {
       linkedInvoice
     });
 
+    console.log(`Summary of Work created with ID: ${summary._id} for Invoice: ${linkedInvoice}`);
     res.status(201).json({ success: true, data: summary });
   } catch (error) {
     res.status(400).json({ success: false, message: error.message });
