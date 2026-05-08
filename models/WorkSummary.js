@@ -42,6 +42,13 @@ const workSummarySchema = new mongoose.Schema({
     ref: 'Invoice', // Relational link to your existing Invoice model
     required: [true, "A Summary of Work must be anchored to an Invoice"]
   },
+
+  businessId: { 
+        type: mongoose.Schema.Types.ObjectId, 
+        ref: 'User.enterpriseBusinesses',
+        default: null // null means it belongs to the "Main" account
+    },
+
   status: {
     type: String,
     enum: ['draft', 'finalized', 'shared'],
