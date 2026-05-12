@@ -4,6 +4,7 @@ const bcrypt = require('bcryptjs')
 const asyncHandler = require("express-async-handler");
 
 
+
 exports.updatePickupAddress = asyncHandler(async (req, res) => {
   const userId  = req.userId;
   const { street, city, state, country, postalCode } = req.body;
@@ -189,3 +190,61 @@ exports.updateBusinessTin = async (req, res) => {
     res.status(500).json({ message: "Failed to update TIN" });
   }
 };
+
+
+// @desc    Update Invoice Branding Settings
+// @route   PATCH /api/users/branding
+// @access  Private (Requires Auth Middleware)
+exports.updateBranding = asyncHandler(async (req, res) => {
+    const user = await User.findById(req.userId);
+
+    if (!user) {
+        res.status(404);
+        throw new Error('User not found');
+    }
+
+    const { headerColor, accentColor, selectedTemplate, removeWatermark } = req.body;
+
+    // --- THE GUARDIAN LOGIC (The Paywall) ---
+    const isPremium = user.planType === 'pro' || user.planType === 'enterprise';
+
+    // 1. Guard: Template Selection
+    // If they try to change the template but aren't Pro, we force it back to 'modern'
+    if (selectedTemplate && selectedTemplate !== 'modern' && !isPremium) {
+        res.status(403);
+        throw new Error('Bespoke templates are reserved for Pro and Enterprise accounts.');
+    }
+
+    // 2. Guard: Watermark Removal
+    if (removeWatermark === true && !isPremium) {
+        res.status(403);
+        throw new Error('White-labeling is a premium feature. Please upgrade to remove watermarks.');
+    }
+
+    // 3. Guard: Custom Colors
+    // If you want Basic users to have some colors, you can omit this. 
+    // Otherwise, lock it down:
+    if ((headerColor || accentColor) && !isPremium) {
+        res.status(403);
+        throw new Error('Custom brand palettes are available on Pro tiers.');
+    }
+
+    // --- APPLY UPDATES ---
+    // We use the nullish coalescing operator (??) to keep existing values if not provided
+    user.brandSettings = {
+        headerColor: headerColor ?? user.brandSettings.headerColor,
+        accentColor: accentColor ?? user.brandSettings.accentColor,
+        selectedTemplate: selectedTemplate ?? user.brandSettings.selectedTemplate,
+        removeWatermark: removeWatermark ?? user.brandSettings.removeWatermark,
+    };
+
+    const updatedUser = await user.save();
+
+    res.status(200).json({
+        success: true,
+        message: "Branding updated successfully",
+        brandSettings: updatedUser.brandSettings
+    });
+});
+
+
