@@ -138,7 +138,7 @@ usage: {
   // The layout engine choice
   selectedTemplate: { 
     type: String, 
-    enum: ['minimalist', 'modern', 'institutional'], 
+    enum: ['minimalist', 'zenith', 'institutional'], 
     default: 'modern' 
   },
   // The white-label toggle

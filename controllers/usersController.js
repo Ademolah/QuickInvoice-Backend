@@ -206,11 +206,11 @@ exports.updateBranding = asyncHandler(async (req, res) => {
     const { headerColor, accentColor, selectedTemplate, removeWatermark } = req.body;
 
     // --- THE GUARDIAN LOGIC (The Paywall) ---
-    const isPremium = user.planType === 'pro' || user.planType === 'enterprise';
+    const isPremium = user.plan === 'pro' || user.plan === 'enterprise';
 
     // 1. Guard: Template Selection
     // If they try to change the template but aren't Pro, we force it back to 'modern'
-    if (selectedTemplate && selectedTemplate !== 'modern' && !isPremium) {
+    if (selectedTemplate && selectedTemplate !== 'minimalist' && !isPremium) {
         res.status(403);
         throw new Error('Bespoke templates are reserved for Pro and Enterprise accounts.');
     }
@@ -241,10 +241,10 @@ exports.updateBranding = asyncHandler(async (req, res) => {
     const updatedUser = await user.save();
 
     res.status(200).json({
-        success: true,
-        message: "Branding updated successfully",
-        brandSettings: updatedUser.brandSettings
-    });
+    success: true,
+    message: "Branding updated successfully",
+    user: updatedUser // Return the full user object here
+});
 });
 
 
