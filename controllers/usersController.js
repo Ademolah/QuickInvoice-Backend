@@ -212,7 +212,7 @@ exports.updateBranding = asyncHandler(async (req, res) => {
     // If they try to change the template but aren't Pro, we force it back to 'modern'
     if (selectedTemplate && selectedTemplate !== 'minimalist' && !isPremium) {
         res.status(403);
-        throw new Error('Bespoke templates are reserved for Pro and Enterprise accounts.');
+        throw new Error('Templates are reserved for Pro and Enterprise accounts.');
     }
 
     // 2. Guard: Watermark Removal
