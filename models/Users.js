@@ -119,8 +119,33 @@ usage: {
 
   currency: {
   type: String,
-  enum: ["NGN", "USD", "GBP", "EUR", "TRY"], // extendable
+  enum: ["NGN", "USD", "GBP", "EUR", "TRY"], 
   default: "NGN"
+},
+
+// THE CUSTOMIZATION HUB
+  brandSettings: {
+  // The 'bucket' for the big structural color
+  headerColor: { 
+    type: String, 
+    default: '#0028AE' 
+  },
+  // We'll set the Navy as the Accent (for buttons/icons/subtle links)
+  accentColor: { 
+    type: String, 
+    default: '#001325' 
+  },
+  // The layout engine choice
+  selectedTemplate: { 
+    type: String, 
+    enum: ['minimalist', 'zenith', 'institutional'], 
+    default: 'modern' 
+  },
+  // The white-label toggle
+  removeWatermark: { 
+    type: Boolean, 
+    default: false 
+  }
 }
 
   

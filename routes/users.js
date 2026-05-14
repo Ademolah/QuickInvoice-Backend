@@ -1,7 +1,7 @@
 const express = require('express');
 const User = require('../models/Users'); // Assuming you have a User model
 const auth = require('../middleware/authMiddleware');
-const { updateAccountDetails, updatePickupAddress, getVendorSlug,updateBusinessTin } = require('../controllers/usersController')
+const { updateAccountDetails, updatePickupAddress, getVendorSlug,updateBusinessTin, updateBranding } = require('../controllers/usersController')
 const { changePassword } = require('../controllers/usersController')
 const axios = require('axios')
 const asyncHandler = require('express-async-handler')
@@ -333,6 +333,7 @@ router.get("/fetchTransactions", auth, async (req, res) => {
 module.exports = router;
 
 
+router.patch('/branding', auth, trackActivity, updateBranding);
 router.put('/update-tin', auth, updateBusinessTin);
 router.put('/account-details', auth, trackActivity, updateAccountDetails);
 router.put('/change-password', auth, trackActivity, changePassword);
