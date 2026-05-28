@@ -12,7 +12,7 @@ const invoiceSchema = new mongoose.Schema({
   clientName: { type: String, required: true },
   clientEmail: { type: String, match: /.+\@.+\..+/ },
   clientPhone: { type: String },
-  currency: { type: String, default: 'NGN' },
+  currency: { type: String, enum: ['NGN', 'USD', 'GBP', 'EUR', 'TRY'], default: 'NGN' },
   items: { type: [itemSchema], default: [] },
   subtotal: { type: Number, required: true },
   tax: { type: Number, default: 0 },
