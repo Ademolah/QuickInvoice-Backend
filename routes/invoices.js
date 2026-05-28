@@ -17,7 +17,7 @@ router.post('/', auth, trackActivity, async (req, res) => {
   try {
     const {
       clientName, clientEmail, clientPhone, items = [],
-      tax = 0, discount = 0, dueDate, notes, outstandingBalance
+      tax = 0, discount = 0, dueDate, notes, outstandingBalance, currency
     } = req.body;
 
     if (!clientName || !items.length) {
@@ -54,7 +54,8 @@ router.post('/', auth, trackActivity, async (req, res) => {
       outstandingBalance: finalOutstanding,
       status: 'sent',
       dueDate,
-      notes
+      notes,
+      currency: currency || 'NGN'
     });
 
     res.json(inv);
