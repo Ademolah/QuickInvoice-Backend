@@ -21,134 +21,7 @@ const authLimiter = rateLimit({
     // store: new RateLimitRedisStore({ sendCommand: (...args) => redisClient.call(...args) }) // optional
   });
 
-// @desc    Register new user
-// @route   POST /api/auth/register
-// router.post("/register", async (req, res) => {
-//   try {
-//     const { name, email, phone, businessName, password } = req.body;
 
-//     // Basic validation
-//     if (!name || !email || !phone || !businessName || !password) {
-//       return res.status(400).json({ message: "All fields are required" });
-//     }
-
-//     // Check if email already exists
-//     const existingUser = await User.findOne({ $or: [{ email }, { phone }] });
-//     if (existingUser) {
-//       return res.status(400).json({ message: "Email or phone already in use" });
-//     }
-
-//     // Hash password
-//     const salt = await bcrypt.genSalt(10);
-//     const passwordHash = await bcrypt.hash(password, salt);
-
-    
-
-//     // Create user
-//     const newUser = new User({
-//       name,
-//       email,
-//       // phone: `+234${req.body.phone}`,
-//       phone: `${req.body.dialCode}${req.body.phone}`,
-//       businessName,
-//       passwordHash
-//     });
-
-//     await newUser.save();
-
-//     // Create JWT token
-//     const token = jwt.sign(
-//       { id: newUser._id, email: newUser.email, businessName: newUser.businessName },
-//       process.env.JWT_SECRET,
-//       { expiresIn: "24h" }
-//     );
-    
-
-//     // Trigger the Welcome Intelligence
-//     await Notification.create({
-//       userId: newUser._id,
-//       type: 'SYSTEM',
-//       title: 'Welcome to QuickInvoice! 🚀',
-//       message: 'Your workspace is ready. You have 15 free invoice slots this month. Need help? Click "Manage Subscription" to see Pro benefits.',
-//       createdAt: new Date()
-//     });
-
-//     await sendWelcomeEmail(name, email, businessName)
-
-//     console.log(`${newUser.name} just signed up` )
-//     res.status(201).json({
-//       message: "User registered successfully",
-//       token,
-//       user: {
-//         id: newUser._id,
-//         name: newUser.name,
-//         email: newUser.email,
-//         phone: newUser.phone,
-//         businessName: newUser.businessName
-//       }
-//     });
-//   } catch (error) {
-//     console.error("Register error:", error);
-//     res.status(500).json({ message: "Server error" });
-//   }
-// });
-
-// @desc    Login user
-// @route   POST /api/auth/login
-// router.post("/login", authLimiter, async (req, res) => {
-//   try {
-//     const { email, password } = req.body;
-
-//     // Validate
-//     if (!email || !password) {
-//       return res.status(400).json({ message: "Email and password are required" });
-//     }
-
-//     // Find user
-//     const user = await User.findOne({ email });
-//     if (!user) {
-//       return res.status(400).json({ message: "Invalid credentials" });
-//     }
-
-//     // Compare password
-//     const isMatch = await bcrypt.compare(password, user.passwordHash);
-//     if (!isMatch) {
-//       return res.status(400).json({ message: "Invalid credentials" });
-//     }
-
-//     if(user.isFrozen){
-//       return res.status(403).json({ message: "Account is frozen. Contact support." });
-//     }
-
-
-//     user.tokenVersion += 1;
-//     await user.save();
-
-//     const token = jwt.sign(
-//       { id: user._id, email: user.email, tokenVersion: user.tokenVersion, businessName: user.businessName },
-//       process.env.JWT_SECRET,
-//       { expiresIn: "24h" }
-//     );
-
-//     console.log(`${user.name} just logged in` )
-
-//     res.json({
-//       message: "Login successful",
-//       token,
-//       user: {
-//         id: user._id,
-//         name: user.name,
-//         email: user.email,
-//         phone: user.phone,
-//         businessName: user.businessName
-//       }
-//     }); 
-//     // return
-//   } catch (error) {
-//     console.error("Login error:", error);
-//     res.status(500).json({ message: "Server error" });
-//   }
-// });
 
 
 router.post("/register", async (req, res) => {
@@ -227,22 +100,21 @@ router.post("/register", async (req, res) => {
 });
 
 
+
+
 router.post("/login", authLimiter, async (req, res) => {
   try {
     const { email, password } = req.body;
 
-    // Validate
     if (!email || !password) {
       return res.status(400).json({ message: "Email and password are required" });
     }
 
-    // Find user
     const user = await User.findOne({ email });
     if (!user) {
       return res.status(400).json({ message: "Invalid credentials" });
     }
 
-    // Compare password
     const isMatch = await bcrypt.compare(password, user.passwordHash);
     if (!isMatch) {
       return res.status(400).json({ message: "Invalid credentials" });
@@ -252,36 +124,47 @@ router.post("/login", authLimiter, async (req, res) => {
       return res.status(403).json({ message: "Account is frozen. Contact support." });
     }
 
-    // Increment token version to invalidate old sessions
-    user.tokenVersion += 1;
-    await user.save();
+    const isEnterpriseUser = user.plan === "enterprise";
+    let finalTokenVersion = user.tokenVersion || 0;
 
-    // 🔐 THE UPGRADE: Include 'role' in the JWT payload
+    // 🚨 ATOMIC UPGRADE: Bypasses user.save() traps to guarantee database updates
+    if (!isEnterpriseUser) {
+      const updatedUser = await User.findByIdAndUpdate(
+        user._id,
+        { $inc: { tokenVersion: 1 } }, // Atomically increment by 1 directly in MongoDB
+        { new: true, runValidators: false } // Get the freshly updated document immediately
+      );
+      finalTokenVersion = updatedUser.tokenVersion;
+    }
+
+    // Sign the JWT with the precise version stored in the database
     const token = jwt.sign(
       { 
         id: user._id, 
         email: user.email, 
-        role: user.role || 'user', // Default to 'user' if role isn't set
-        tokenVersion: user.tokenVersion, 
+        role: user.role || 'user', 
+        tokenVersion: finalTokenVersion, 
         businessName: user.businessName 
       },
       process.env.JWT_SECRET,
       { expiresIn: "24h" }
     );
 
-    console.log(`${user.name} (${user.role || 'user'}) just logged in`);
+    // 🕵️‍♂️ DIAGNOSTIC LOG
+   console.log(`${user.name} (${user.role || 'user'}) just logged in`);
 
     res.json({
       message: "Login successful",
       token,
-      role: user.role || 'user', // 🚦 Send to frontend for the "Traffic Controller"
+      role: user.role || 'user', 
       user: {
         id: user._id,
         name: user.name,
         email: user.email,
         phone: user.phone,
         businessName: user.businessName,
-        role: user.role || 'user'
+        role: user.role || 'user',
+        plan: user.plan
       }
     }); 
   } catch (error) {
@@ -289,12 +172,5 @@ router.post("/login", authLimiter, async (req, res) => {
     res.status(500).json({ message: "Server error" });
   }
 });
-
-
-
-
-
-
-
 
 module.exports = router;
