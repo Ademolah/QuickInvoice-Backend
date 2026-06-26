@@ -28,26 +28,56 @@ exports.addTransaction = async (req, res) => {
   }
 };
 
+
 exports.getTransactions = async (req, res) => {
   try {
-    // 1. FIX: Use req.userId (matching your auth middleware)
     const userId = req.userId; 
     const user = await User.findById(userId);
 
     if (!user) return res.status(404).json({ message: "User not found" });
 
-    const { startDate, endDate, type, category } = req.query;
+    // 1. SURGICAL INJECTION: Extract the new frontend filter parameters
+    const { filterType, customMonth, type, category } = req.query;
 
-    // 2. FIX: Consistent userId and activeBusinessId handling
     let query = { 
       userId: userId, 
-      businessId: user.activeBusinessId // Mongoose handles null if switching to Main
+      businessId: user.activeBusinessId 
     };
 
-    // Advanced Filtering Logic
-    if (startDate && endDate) {
-      query.date = { $gte: new Date(startDate), $lte: new Date(endDate) };
+    // 2. TIMING LOGIC: Dynamically calculate boundaries for the MongoDB query
+    const now = new Date();
+    let queryStartDate, queryEndDate;
+
+    if (filterType === 'this-month') {
+      // First day of current month to the absolute last millisecond of the month
+      queryStartDate = new Date(now.getFullYear(), now.getMonth(), 1);
+      queryEndDate = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59, 999);
+      
+    } else if (filterType === 'this-week') {
+      // Calculates the most recent Sunday to Saturday boundary
+      const firstDayOfWeek = new Date(now.setDate(now.getDate() - now.getDay()));
+      firstDayOfWeek.setHours(0, 0, 0, 0);
+      
+      const lastDayOfWeek = new Date(firstDayOfWeek);
+      lastDayOfWeek.setDate(lastDayOfWeek.getDate() + 6);
+      lastDayOfWeek.setHours(23, 59, 59, 999);
+
+      queryStartDate = firstDayOfWeek;
+      queryEndDate = lastDayOfWeek;
+
+    } else if (filterType === 'custom' && customMonth) {
+      // Expects customMonth in "YYYY-MM" format (e.g., "2026-06")
+      const [year, month] = customMonth.split('-');
+      queryStartDate = new Date(year, parseInt(month) - 1, 1);
+      queryEndDate = new Date(year, parseInt(month), 0, 23, 59, 59, 999);
     }
+
+    // 3. Apply the dynamic timing filter (skips entirely if filterType is "all")
+    if (queryStartDate && queryEndDate) {
+      query.date = { $gte: queryStartDate, $lte: queryEndDate };
+    }
+
+    // Advanced Filtering Logic
     if (type) query.type = type;
     if (category) query.category = category;
 
@@ -70,7 +100,6 @@ exports.getTransactions = async (req, res) => {
       data: transactions
     });
   } catch (error) {
-    // This will now catch the specific error and tell you exactly what's wrong
     console.error("Bookkeeping Fetch Error:", error);
     res.status(500).json({ message: "Failed to fetch ledger", error: error.message });
   }
