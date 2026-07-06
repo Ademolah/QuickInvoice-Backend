@@ -15,11 +15,10 @@ const transporter = nodemailer.createTransport({
 
 function sendReminderEmail(user) {
   const mailOptions = {
-    from: '"QuickInvoice NG" <hi@quickinvoiceng.com>',
+    from: '"QuickInvoice" <hi@quickinvoiceng.com>',
     to: user.email,
     subject: "⏰ Your Pro plan expires soon",
-    html: `
-      <!DOCTYPE html>
+    html: `<!DOCTYPE html>
 <html>
 <head>
   <meta charset="UTF-8" />
@@ -46,13 +45,13 @@ function sendReminderEmail(user) {
           Don't lose your <span style="color:#0028AE;">Intelligence Suite</span>.
         </h2>
         <p style="margin:24px 0; font-size:16px; line-height:1.6; color:#475569;">
-          Hi ${user.name}, your Pro access for <strong>${user.businessName}</strong> is set to expire in <span style="color:#E11D48; font-weight:700;">4 days</span>. 
+          Hi ${user.name}, your Premium access for <strong>${user.businessName}</strong> is set to expire in <span style="color:#E11D48; font-weight:700;">4 days</span>. 
         </p>
 
         <div style="background:#FFF1F2; border-radius:16px; padding:20px; margin:30px 0;">
           <h3 style="margin:0 0 12px 0; font-size:14px; font-weight:800; color:#9F1239; text-transform:uppercase; letter-spacing:0.5px;">What happens next?</h3>
           <p style="margin:0; font-size:14px; color:#BE123C; line-height:1.5;">
-            To maintain "World-Class" operations, a renewal is required. Without Pro, the following features will be paused:
+            To maintain "World-Class" operations, a renewal is required. Without an active subscription, the following core features will be paused:
           </p>
           <ul style="margin:12px 0 0 0; padding-left:20px; font-size:13px; color:#9F1239; line-height:1.8;">
             <li><strong>Automated Bookkeeping & Ledger access</strong></li>
@@ -65,12 +64,12 @@ function sendReminderEmail(user) {
         <div style="text-align:center; margin:40px 0;">
           <a href="https://quickinvoiceng.com" 
              style="display:inline-block; padding:18px 36px; background:#0028AE; color:#FFFFFF; text-decoration:none; border-radius:16px; font-size:16px; font-weight:700; box-shadow: 0 10px 15px -3px rgba(0, 40, 174, 0.2);">
-             Secure My Pro Status
+             Secure My Subscription
           </a>
           <p style="margin-top:20px; font-size:12px; color:#94A3B8;">Fast, secure renewal via Paystack</p>
         </div>
 
-        <p style="margin:0; font-size:14px; color:#64748B; border-top: 1px solid #F1F5F9; pt: 20px;">
+        <p style="margin:0; font-size:14px; color:#64748B; border-top: 1px solid #F1F5F9; padding-top: 20px;">
           If you have already renewed or updated your billing, please disregard this automated notice.
         </p>
       </td>
@@ -106,13 +105,31 @@ cron.schedule("0 0 * * *", async () => {
   const reminderDate = new Date(now);
   reminderDate.setDate(reminderDate.getDate() + 4); // 4 days from now
 
-  // Find users whose proExpires is exactly 4 days away
+  // Safely clone the date to define strict midnight-to-midnight boundaries
+  const startOfDay = new Date(reminderDate);
+  startOfDay.setHours(0, 0, 0, 0);
+  
+  const endOfDay = new Date(reminderDate);
+  endOfDay.setHours(23, 59, 59, 999);
+
+  // Target both Pro and Enterprise users hitting their 4-day mark
   const users = await User.find({
-    plan: "pro",
-    proExpires: {
-      $gte: new Date(reminderDate.setHours(0, 0, 0, 0)),
-      $lte: new Date(reminderDate.setHours(23, 59, 59, 999)),
-    },
+    $or: [
+      {
+        plan: "pro",
+        proExpires: { 
+          $gte: startOfDay, 
+          $lte: endOfDay 
+        },
+      },
+      {
+        plan: "enterprise",
+        enterpriseExpires: { 
+          $gte: startOfDay, 
+          $lte: endOfDay 
+        },
+      }
+    ]
   });
 
   console.log(`📧 Found ${users.length} users with expiring subs in 4 days.`);
