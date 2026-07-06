@@ -21,7 +21,7 @@ const sendSubscriptionEmail = async(name, email)=>{
     // Wrap in an async IIFE so we can use await.
     (async () => {
     const info = await transporter.sendMail({
-        from: '"QuickInvoice NG" <hi@quickinvoiceng.com>',
+        from: '"QuickInvoice" <hi@quickinvoiceng.com>',
         to: email,
         subject: "Subscription email",
         text: "Hello world?", // plain‑text body
