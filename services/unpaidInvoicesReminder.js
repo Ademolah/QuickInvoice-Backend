@@ -48,7 +48,7 @@ async function sendUnpaidInvoiceReminders() {
 
 
         await transporter.sendMail({
-        from: `"QuickInvoice NG" <support@quickinvoiceng.com>`,
+        from: `"QuickInvoice" <support@quickinvoiceng.com>`,
         to: user.email,
         subject: "Unpaid Invoice Reminder",
         html,

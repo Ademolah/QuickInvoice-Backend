@@ -21,7 +21,7 @@ const sendOrderConfirmationEmail = async(buyerName,orderId, email,orderDate, ven
     // Wrap in an async IIFE so we can use await.
     (async () => {
     const info = await transporter.sendMail({
-        from: '"QuickInvoice NG" <hello@quickinvoiceng.com>',
+        from: '"QuickInvoice" <hello@quickinvoiceng.com>',
         to: email,
         subject: "Order Confirmed",
         text: "Hello world?", // plain‑text body
