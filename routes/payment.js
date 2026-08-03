@@ -302,13 +302,13 @@ router.get("/callback", async (req, res) => {
         { subscription: "Pro", subscriptionExpiry: new Date(Date.now() + 30*24*60*60*1000) } // 30 days
       );
 
-      return res.redirect("http://localhost:3000/dashboard?status=success");
+      return res.redirect("'https://www.quickinvoiceng.com/dashboard?status=success");
     } else {
-      return res.redirect("http://localhost:3000/dashboard?status=failed");
+      return res.redirect("https://www.quickinvoiceng.com/dashboard?status=failed");
     }
   } catch (err) {
     console.error("Callback Verification Error:", err);
-    res.redirect("http://localhost:3000/dashboard?status=error");
+    res.redirect("https://www.quickinvoiceng.com/dashboard?status=error");
   }
 });
 
