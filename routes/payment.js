@@ -48,7 +48,7 @@ router.post('/initialize', protect, express.json(), async (req, res) => {
     const response = await axios.post('https://api.paystack.co/transaction/initialize', {
       email: user.email,
       amount: amountToCharge,
-      callback_url: `${FRONTEND_URL}/billing`,
+      callback_url: `https://www.quickinvoiceng.com/billing`,
       metadata: { userId, type: metadataType }
     }, {
       headers: { Authorization: `Bearer ${PAYSTACK_SECRET}` }
