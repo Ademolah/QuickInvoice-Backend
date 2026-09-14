@@ -235,10 +235,10 @@ connectDb()
 const allowedOrigins = [
   "https://www.quickinvoiceng.com",
   "https://quickinvoiceng.com",
-  // "http://localhost:3000",
-  // "https://quick-invoice-frontend-two.vercel.app",
-  // "https://test-quickinvoice-frontend.vercel.app",
-  // "https://www.test-quickinvoice-frontend.vercel.app"
+  "http://localhost:3000",
+  "https://quick-invoice-frontend-two.vercel.app",
+  "https://test-quickinvoice-frontend.vercel.app",
+  "https://www.test-quickinvoice-frontend.vercel.app"
 ];
 
 app.use(cors({
