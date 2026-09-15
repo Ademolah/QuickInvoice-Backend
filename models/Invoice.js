@@ -2,6 +2,7 @@ const mongoose = require('mongoose');
 
 const itemSchema = new mongoose.Schema({
   description: { type: String, required: true },
+  serialNumber: { type: String, trim: true, default: "" },
   quantity: { type: Number, required: true, min: 1 },
   unitPrice: { type: Number, required: true, min: 0 },
   total: { type: Number, required: true, min: 0 }
@@ -18,8 +19,7 @@ const invoiceSchema = new mongoose.Schema({
   tax: { type: Number, default: 0 },
   discount: { type: Number, default: 0 },
 
-  //business
-  // models/Invoice.js (apply same to Receipt.js)
+  // business
   businessId: { 
     type: mongoose.Schema.Types.ObjectId, 
     ref: 'User.enterpriseBusinesses',
@@ -27,11 +27,11 @@ const invoiceSchema = new mongoose.Schema({
   },
 
   total: { type: Number, required: true },
-  outstandingBalance: {type: Number, default: 0},
+  outstandingBalance: { type: Number, default: 0 },
   status: { type: String, enum: ['draft', 'sent', 'paid', 'overdue'], default: 'draft' },
   notes: { type: String },
   dueDate: { type: Date },
-},  {timestamps: true});
+}, { timestamps: true });
 
 invoiceSchema.pre('save', function(next){
   this.updatedAt = new Date();

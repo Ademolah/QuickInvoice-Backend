@@ -32,8 +32,10 @@ router.post('/', auth, trackActivity, async (req, res) => {
     const subtotal = items.reduce((s, it) => s + (it.quantity * it.unitPrice), 0);
     const total = Math.max(0, subtotal + tax - discount);
     
+    // ✨ SURGICAL TOUCH: Explicitly capture and trim serialNumber for each item
     const computedItems = items.map(it => ({
       ...it,
+      serialNumber: it.serialNumber ? String(it.serialNumber).trim() : "",
       total: it.quantity * it.unitPrice
     }));
 
