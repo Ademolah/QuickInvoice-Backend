@@ -8,7 +8,7 @@ const SpreadsheetRowSchema = new mongoose.Schema({
   collector: { type: String, default: '' },
   description: { type: String, default: '' },
   sn: { type: String, default: '' },
-  imei: { type: String, default: '' },
+  amount: { type: String, default: '' },
   remark: { type: String, default: '' }
 }, { _id: false }); 
 
