@@ -5,10 +5,10 @@ const SpreadsheetRowSchema = new mongoose.Schema({
   id: { type: mongoose.Schema.Types.Mixed, required: true }, // Mixed allows string or number (Date.now())
   date: { type: String, default: '' },
   units: { type: mongoose.Schema.Types.Mixed, default: '' },
-  productName: { type: String, default: '' },
+  collector: { type: String, default: '' },
   description: { type: String, default: '' },
   sn: { type: String, default: '' },
-  imei: { type: String, default: '' },
+  amount: { type: String, default: '' },
   remark: { type: String, default: '' }
 }, { _id: false }); 
 
