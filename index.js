@@ -1,7 +1,6 @@
 require('dotenv').config()
 require('./utils/cronJobs')
 require('./utils/reportSummary')
-const http = require('http'); // Required for Socket.io
 const https = require('https'); // Required for Render keep-alive self-ping
 const express = require('express')
 const connectDb = require('./db/db')
