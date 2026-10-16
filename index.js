@@ -1,6 +1,8 @@
 require('dotenv').config()
 require('./utils/cronJobs')
 require('./utils/reportSummary')
+const http = require('http'); // Required for Socket.io
+const https = require('https'); // Required for Render keep-alive self-ping
 const express = require('express')
 const connectDb = require('./db/db')
 const authRoutes = require('./routes/auths')
@@ -331,4 +333,15 @@ app.use('/api/quickbuddy', quickBuddyRoute);
 
 server.listen(4000, () => {
   console.log('🚀 QuickInvoice Server (with Socket.io) listening on port 4000');
+
+  // --- RENDER KEEP-ALIVE SELF-PING (Every 14 minutes) ---
+  const PING_URL = 'https://quickinvoiceng.com';
+  
+  setInterval(() => {
+    https.get(PING_URL, (res) => {
+      console.log(`🏓 Self-ping sent to ${PING_URL} | Status: ${res.statusCode}`);
+    }).on('error', (err) => {
+      console.error('❌ Self-ping failed:', err.message);
+    });
+  }, 14 * 60 * 1000); 
 });
